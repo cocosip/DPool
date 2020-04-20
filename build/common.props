@@ -1,0 +1,12 @@
+<Project>
+  <Import Project="version.props" />
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Authors>virtual</Authors>
+    <Product>DPool</Product>
+    <PackageProjectUrl>https://github.com/cocosip/DPool</PackageProjectUrl>
+    <PackageLicense>https://github.com/cocosip/DPool/blob/master/LICENSE</PackageLicense>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/cocosip/DPool</RepositoryUrl>
+  </PropertyGroup>
+</Project>
