@@ -5,6 +5,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>DPool</AssemblyName>
     <PackageId>DPool</PackageId>
+    <RootNamespace>DPool</RootNamespace>
     <Description>DPool 数据存储池</Description>
   </PropertyGroup>
 

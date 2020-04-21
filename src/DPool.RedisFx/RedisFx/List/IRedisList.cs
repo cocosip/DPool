@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DPool.RedisFx.List
 {
-
     /// <summary>Redis链表
     /// </summary>
     public interface IRedisList
@@ -14,8 +11,28 @@ namespace DPool.RedisFx.List
 
     /// <summary>Redis链表
     /// </summary>
-    public interface IRedisList<T> : IRedisList
+    /// <typeparam name="T"></typeparam>
+    public interface IRedisList<T> : IRedisList where T : IRedisListData
     {
 
+        /// <summary>添加数据元素
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        void Add(params T[] value);
+
+        /// <summary>删除数据
+        /// </summary>
+        void Remove(params T[] value);
+
+        /// <summary>根据Id集合删除数据
+        /// </summary>
+        void Remove(params string[] ids);
+
+        /// <summary>获取指定个数的数据
+        /// </summary>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        T[] Get(int count);
     }
 }
