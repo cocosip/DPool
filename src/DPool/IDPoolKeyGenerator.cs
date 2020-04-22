@@ -12,6 +12,14 @@ namespace DPool
 
         /// <summary>生成数据锁Key
         /// </summary>
-        string GenerateDataLockKey(string group, Type type);
+        string GenerateDataLockName(string group, Type type);
+
+        /// <summary>进行中的数据Key
+        /// </summary>
+        string GenerateProcessDataIndexKey(string group, string processGroup, Type type);
+
+        /// <summary>进行中的数据Key
+        /// </summary>
+        string GenerateProcessDataKey(string group, string processGroup, Type type, string id);
     }
 }

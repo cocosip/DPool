@@ -1,5 +1,4 @@
 ﻿using CSRedis;
-using DPool.GenericsPool;
 using System;
 using System.Collections.Generic;
 
@@ -9,15 +8,6 @@ namespace DPool
     /// </summary>
     public class DataPoolOption
     {
-
-        /// <summary>数据前缀
-        /// </summary>
-        public string DataPrefix { get; set; } = DPoolConsts.DATA_PREFIX;
-
-        /// <summary>数据锁前缀
-        /// </summary>
-        public string DataLockPrefix { get; set; } = DPoolConsts.DATA_LOCK_PREFIX;
-
         /// <summary>默认分组
         /// </summary>
         public string DefaultGroup { get; set; } = DPoolConsts.DEFAULT_GROUP;
@@ -32,7 +22,7 @@ namespace DPool
 
         /// <summary>多久的数据算超时
         /// </summary>
-        public int DateTimeoutSeconds { get; set; } = 30;
+        public int DataTimeoutSeconds { get; set; } = 30;
 
         /// <summary>泛型数据池的描述信息
         /// </summary>

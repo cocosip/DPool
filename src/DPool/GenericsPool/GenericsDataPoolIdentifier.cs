@@ -14,6 +14,21 @@ namespace DPool.GenericsPool
         /// </summary>
         public Type DataType { get; set; }
 
+        /// <summary>Ctor
+        /// </summary>
+        public GenericsDataPoolIdentifier()
+        {
+
+        }
+
+        /// <summary>Ctor
+        /// </summary>
+        public GenericsDataPoolIdentifier(string group, Type dataType)
+        {
+            Group = group;
+            DataType = dataType;
+        }
+
         public bool Equals(GenericsDataPoolIdentifier other)
         {
             if (other is null)

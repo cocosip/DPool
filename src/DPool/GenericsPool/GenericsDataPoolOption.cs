@@ -14,6 +14,10 @@ namespace DPool.GenericsPool
         /// </summary>
         public virtual Type DataType { get; set; }
 
+        /// <summary>进行中数据的前缀
+        /// </summary>
+        public string ProcessGroup { get; set; } = DPoolConsts.PROCESS_DATA_PREFIX;
+
         /// <summary>Id选择器
         /// </summary>
         public virtual Delegate IdSelector { get; set; }

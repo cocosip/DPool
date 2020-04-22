@@ -10,6 +10,10 @@ namespace DPool
         /// </summary>
         public string Group { get; set; }
 
+        /// <summary>分组数据名(当名称设置的不同时,每个客户端从Redis取走数据后都将放在独立的一个组中)
+        /// </summary>
+        public string ProcessGroup { get; set; }
+
         /// <summary>数据类型
         /// </summary>
         public virtual Type DataType { get; set; }
@@ -27,6 +31,6 @@ namespace DPool
         /// </summary>
         public override Type DataType { get; set; } = typeof(T);
 
- 
+
     }
 }

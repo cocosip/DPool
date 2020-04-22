@@ -1,28 +1,25 @@
 ﻿using DPool.GenericsPool;
-using DPool.Scheduling;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
-using System.Net.Mail;
-using System.Reflection;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace DPool
 {
     /// <summary>数据池
     /// </summary>
-    public class DataPool
+    public class DataPool : IDataPool
     {
-        public bool IsRunning { get; private set; } = false;
+        public bool IsRunning { get { return _isRunning == 1; } }
+
+        private int _isRunning = 0;
 
         private readonly ILogger _logger;
         private readonly DataPoolOption _option;
         private readonly IGenericsDataPoolFactory _genericsDataPoolFactory;
 
-        private readonly ConcurrentDictionary<GenericsDataPoolIdentifier, GenericsDataPool> _genericsDataPoolDict;
+        private readonly ConcurrentDictionary<GenericsDataPoolIdentifier, IGenericsDataPool> _genericsDataPoolDict;
 
         /// <summary>Ctor
         /// </summary>
@@ -32,7 +29,7 @@ namespace DPool
             _option = option.Value;
             _genericsDataPoolFactory = genericsDataPoolFactory;
 
-            _genericsDataPoolDict = new ConcurrentDictionary<GenericsDataPoolIdentifier, GenericsDataPool>();
+            _genericsDataPoolDict = new ConcurrentDictionary<GenericsDataPoolIdentifier, IGenericsDataPool>();
         }
 
         /// <summary>添加数据
@@ -40,14 +37,10 @@ namespace DPool
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
         /// <returns></returns>
-        public async Task<long> WriteAsync<T>(string group = "", params T[] value)
+        public long Write<T>(string group = "", params T[] value) where T : class, new()
         {
-            return default;
-
-            //group = GetGroup(group);
-            //var key = _dPoolKeyGenerator.GenerateDataKey(group, typeof(T));
-            //var client = _redisClientProxy.GetClient();
-            //return await client.RPushAsync<T>(key, value);
+            var genericsDataPool = FindGenericsDataPool<T>(group);
+            return genericsDataPool.Write(value);
         }
 
         /// <summary>获取数据
@@ -56,78 +49,21 @@ namespace DPool
         /// <param name="count"></param>
         /// <param name="group"></param>
         /// <returns></returns>
-        public async Task<T[]> GetAsync<T>(int count, string group = "")
+        public T[] Get<T>(int count, string group = "") where T : class, new()
         {
-            //group = GetGroup(group);
-
-            //var lockKey = _dPoolKeyGenerator.GenerateDataLockKey(group, typeof(T));
-            //var client = _redisClientProxy.GetClient();
-            //var l = client.Lock(lockKey, _option.DataLockSeconds);
-
-            //var list = _redisListFactory.Get<DataFuture<T>>(group);
-
-            //var key = _dPoolKeyGenerator.GenerateDataKey(group, typeof(T));
-            //try
-            //{
-            //    //从链表中获取数据
-            //    var value = await client.LRangeAsync<T>(key, 0, count);
-
-            //    //将数据添加到处理中的数据 
-            //    var dataFutures = value.Select(x => new DataFuture<T>(x)).ToArray();
-
-            //    //添加到进行中的数据链表
-            //    list.Add(dataFutures);
-
-            //    //删除获取的数据
-            //    await client.LTrimAsync(key, 0, count);
-
-            //    return value;
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogError(ex, "获取DataPool数据出错了,Group:'{0}',类型:'{1}',异常信息:{2}", group, typeof(T).FullName, ex.Message);
-            //    return default;
-            //}
-            //finally
-            //{
-            //    l?.Unlock();
-            //}
-            return default;
+            var genericsDataPool = FindGenericsDataPool<T>(group);
+            return genericsDataPool.Get(count);
         }
 
         /// <summary>归还数据
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <param name="group"></param>
         /// <param name="value"></param>
-        /// <returns></returns>
-        public async Task ReturnAsync<T>(string group = "", params T[] value)
+        public void Return<T>(string group = "", params T[] value) where T : class, new()
         {
-            //group = GetGroup(group);
-
-            //var client = _redisClientProxy.GetClient();
-            //var list = _redisListFactory.Get<DataFuture<T>>(group);
-            //var key = _dPoolKeyGenerator.GenerateDataKey(group, typeof(T));
-
-            //try
-            //{
-
-            //    var descriptor = _listOption.Descriptors.FirstOrDefault(x => x.DataType == typeof(T) && x.Group == group);
-            //    var genericsDescriptor = descriptor as RedisListDescriptor<T>;
-
-            //    var ids = value.Select(x => genericsDescriptor.IdSelector(x)).ToArray();
-
-            //    //从链表删除
-            //    list.Remove(ids);
-
-            //    //将数据重新添加到列表
-            //    await client.RPushAsync(key, value);
-
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogError(ex, "归还Redis数据出错,Group:'{0}',类型:'{1}',异常信息:{1}", group, typeof(T).FullName, ex.Message);
-            //    throw ex;
-            //}
+            var genericsDataPool = FindGenericsDataPool<T>(group);
+            genericsDataPool.Return(value);
         }
 
         /// <summary>释放数据
@@ -136,53 +72,51 @@ namespace DPool
         /// <param name="group"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public async Task RleaseAsync<T>(string group = "", params T[] value)
+        public void Release<T>(string group = "", params T[] value) where T : class, new()
         {
-            //group = GetGroup(group);
-
-            //var client = _redisClientProxy.GetClient();
-            //var list = _redisListFactory.Get<DataFuture<T>>(group);
-
-            //try
-            //{
-
-            //    var descriptor = _listOption.Descriptors.FirstOrDefault(x => x.DataType == typeof(T) && x.Group == group);
-            //    var genericsDescriptor = descriptor as RedisListDescriptor<T>;
-
-            //    var ids = value.Select(x => genericsDescriptor.IdSelector(x)).ToArray();
-
-            //    //从链表删除
-            //    list.Remove(ids);
-
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogError(ex, "归还Redis数据出错,Group:'{0}',类型:'{1}',异常信息:{1}", group, typeof(T).FullName, ex.Message);
-            //    throw ex;
-            //}
-            //await Task.FromResult(0);
-
+            var genericsDataPool = FindGenericsDataPool<T>(group);
+            genericsDataPool.Release(value);
         }
 
-
+        /// <summary>运行
+        /// </summary>
         public void Start()
         {
             if (IsRunning)
             {
-                _logger.LogInformation("DataPool正在运行,请勿重复运行!");
                 return;
             }
 
+            Initialize();
 
-            IsRunning = true;
+            Interlocked.Exchange(ref _isRunning, 1);
         }
 
-
+        /// <summary>停止
+        /// </summary>
         public void Shutdown()
         {
+            if (!IsRunning)
+            {
+                return;
+            }
 
+            //停止每个泛型数据池
+            foreach (var kv in _genericsDataPoolDict)
+            {
+                kv.Value.Shutdown();
+            }
+
+
+            Interlocked.Exchange(ref _isRunning, 0);
         }
 
+
+
+        #region Private method
+
+        /// <summary>初始化
+        /// </summary>
         private void Initialize()
         {
             foreach (var descriptor in _option.Descriptors)
@@ -193,18 +127,33 @@ namespace DPool
                 {
                     _logger.LogWarning("添加数据池失败,数据池信息:{0}", genericsDataPool.Identifier);
                 }
+                else
+                {
+                    //运行
+                    genericsDataPool.Start();
+                }
             }
         }
 
 
-        private string GetGroup(string group)
+        /// <summary>查询泛型数据池
+        /// </summary>
+        private IGenericsDataPool<T> FindGenericsDataPool<T>(string group) where T : class, new()
         {
             if (string.IsNullOrWhiteSpace(group))
             {
                 group = _option.DefaultGroup;
             }
-            return group;
+            var identifier = new GenericsDataPoolIdentifier(group, typeof(T));
+
+            if (!_genericsDataPoolDict.TryGetValue(identifier, out IGenericsDataPool genericsDataPool))
+            {
+                throw new ArgumentException($"未找到任何相关的泛型数据池,数据池信息:{identifier}");
+            }
+            return genericsDataPool as IGenericsDataPool<T>;
         }
+
+        #endregion
 
 
 

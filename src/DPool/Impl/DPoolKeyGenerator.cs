@@ -17,15 +17,32 @@ namespace DPool.Impl
         /// </summary>
         public string GenerateDataKey(string group, Type type)
         {
-            return $"{_option.DataPrefix}.{group}.{type.FullName}";
+            return $"{DPoolConsts.DATA_PREFIX}.{group}.{type.FullName}";
         }
 
         /// <summary>生成数据锁Key
         /// </summary>
-        public string GenerateDataLockKey(string group, Type type)
+        public string GenerateDataLockName(string group, Type type)
         {
-            return $"{_option.DataLockPrefix}.{group}.{type.FullName}";
+            return $"{DPoolConsts.DATA_LOCK_PREFIX}.{group}.{type.FullName}";
         }
+
+        /// <summary>进行中的数据Key
+        /// </summary>
+        public string GenerateProcessDataIndexKey(string group, string processGroup, Type type)
+        {
+            return $"{DPoolConsts.PROCESS_DATA_INDEX_PREFIX}.{group}.{processGroup}.{type.FullName}";
+        }
+
+
+        /// <summary>进行中的数据Key
+        /// </summary>
+        public string GenerateProcessDataKey(string group, string processGroup, Type type, string id)
+        {
+            return $"{DPoolConsts.PROCESS_DATA_PREFIX}.{group}.{processGroup}.{type.FullName}.{id}";
+        }
+
+
 
     }
 }

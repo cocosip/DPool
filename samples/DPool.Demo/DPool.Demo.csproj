@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DPool.RedisFx\DPool.RedisFx.csproj" />
+    <ProjectReference Include="..\..\src\DPool\DPool.csproj" />
   </ItemGroup>
 
 </Project>

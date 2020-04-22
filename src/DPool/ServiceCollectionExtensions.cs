@@ -17,10 +17,10 @@ namespace DPool
             services
                 .Configure<DataPoolOption>(configure)
                 .AddSingleton<IScheduleService, ScheduleService>()
-                .AddSingleton<DataPool>()
+                .AddSingleton<IDataPool, DataPool>()
                 .AddSingleton<IGenericsDataPoolFactory, GenericsDataPoolFactory>()
                 .AddSingleton<IDPoolKeyGenerator, DPoolKeyGenerator>()
-                .AddScoped(typeof(GenericsDataPool<>))
+                .AddScoped(typeof(IGenericsDataPool<>), typeof(IGenericsDataPool<>))
                 .AddScoped(typeof(GenericsDataPoolOption<>))
                 ;
 

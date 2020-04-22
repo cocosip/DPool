@@ -8,6 +8,6 @@
         /// </summary>
         /// <param name="descriptor"></param>
         /// <returns></returns>
-        GenericsDataPool CreateGenericsDataPool(GenericsDataPoolDescriptor descriptor);
+        IGenericsDataPool CreateGenericsDataPool(GenericsDataPoolDescriptor descriptor);
     }
 }

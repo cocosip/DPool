@@ -21,7 +21,7 @@ namespace DPool.GenericsPool
         /// </summary>
         /// <param name="descriptor"></param>
         /// <returns></returns>
-        public GenericsDataPool CreateGenericsDataPool(GenericsDataPoolDescriptor descriptor)
+        public IGenericsDataPool CreateGenericsDataPool(GenericsDataPoolDescriptor descriptor)
         {
             using (var scope = _provider.CreateScope())
             {
@@ -31,10 +31,10 @@ namespace DPool.GenericsPool
                 convert.Group = descriptor.Group;
                 convert.IdSelector = descriptor.IdSelector;
 
-                var genericsDataPool = scope.ServiceProvider.GetService(typeof(GenericsDataPool<>));
+                var genericsDataPool = scope.ServiceProvider.GetService(typeof(IGenericsDataPool<>));
                 _logger.LogDebug("创建泛型数据池,Group:'{0}',DataType:'{1}'", descriptor.Group, descriptor.DataType.FullName);
 
-                return genericsDataPool as GenericsDataPool;
+                return genericsDataPool as IGenericsDataPool;
             }
         }
 
