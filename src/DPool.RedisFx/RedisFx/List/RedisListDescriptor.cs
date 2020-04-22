@@ -14,4 +14,12 @@ namespace DPool.RedisFx.List
         /// </summary>
         public Type DataType { get; set; }
     }
+
+    /// <summary>注册信息
+    /// </summary>
+    public class RedisListDescriptor<T> : RedisListDescriptor
+    {
+        public Func<T, string> IdSelector { get; set; }
+    }
+
 }

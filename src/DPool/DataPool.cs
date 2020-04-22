@@ -1,12 +1,12 @@
 ﻿using DPool.RedisFx;
 using DPool.RedisFx.List;
 using DPool.Scheduling;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DPool
 {
@@ -22,13 +22,14 @@ namespace DPool
 
         private readonly IScheduleService _scheduleService;
 
+        private readonly RedisListOption _listOption;
         private readonly IRedisClientProxy _redisClientProxy;
         private readonly IRedisListFactory _redisListFactory;
 
 
         /// <summary>Ctor
         /// </summary>
-        public DataPool(ILogger<DataPool> logger,IServiceProvider provider, IOptions<DataPoolOption> option, IDPoolKeyGenerator dPoolKeyGenerator, IRedisClientProxy redisClientProxy, IRedisListFactory redisListFactory)
+        public DataPool(ILogger<DataPool> logger, IServiceProvider provider, IOptions<DataPoolOption> option, IDPoolKeyGenerator dPoolKeyGenerator, IOptions<RedisListOption> listOption, IRedisClientProxy redisClientProxy, IRedisListFactory redisListFactory)
         {
             _logger = logger;
             _option = option.Value;
@@ -36,6 +37,8 @@ namespace DPool
 
             _scheduleService = provider.GetService<IScheduleService>();
 
+
+            _listOption = listOption.Value;
             _redisClientProxy = redisClientProxy;
             _redisListFactory = redisListFactory;
         }
@@ -59,7 +62,7 @@ namespace DPool
         /// <param name="count"></param>
         /// <param name="group"></param>
         /// <returns></returns>
-        public async Task<T[]> GetAsync<T>(int count, string group = "") where T : IRedisListData
+        public async Task<T[]> GetAsync<T>(int count, string group = "")
         {
             group = GetGroup(group);
 
@@ -103,7 +106,7 @@ namespace DPool
         /// <typeparam name="T"></typeparam>
         /// <param name="value"></param>
         /// <returns></returns>
-        public async Task ReturnAsync<T>(string group = "", params T[] value) where T : IRedisListData
+        public async Task ReturnAsync<T>(string group = "", params T[] value)
         {
             group = GetGroup(group);
 
@@ -113,7 +116,11 @@ namespace DPool
 
             try
             {
-                var ids = value.Select(x => ((IRedisListData)x).SelectId()).ToArray();
+
+                var descriptor = _listOption.Descriptors.FirstOrDefault(x => x.DataType == typeof(T) && x.Group == group);
+                var genericsDescriptor = descriptor as RedisListDescriptor<T>;
+
+                var ids = value.Select(x => genericsDescriptor.IdSelector(x)).ToArray();
 
                 //从链表删除
                 list.Remove(ids);
@@ -136,7 +143,7 @@ namespace DPool
         /// <param name="group"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public async Task RleaseAsync<T>(string group = "", params T[] value) where T : IRedisListData
+        public async Task RleaseAsync<T>(string group = "", params T[] value)
         {
             group = GetGroup(group);
 
@@ -145,7 +152,11 @@ namespace DPool
 
             try
             {
-                var ids = value.Select(x => ((IRedisListData)x).SelectId()).ToArray();
+
+                var descriptor = _listOption.Descriptors.FirstOrDefault(x => x.DataType == typeof(T) && x.Group == group);
+                var genericsDescriptor = descriptor as RedisListDescriptor<T>;
+
+                var ids = value.Select(x => genericsDescriptor.IdSelector(x)).ToArray();
 
                 //从链表删除
                 list.Remove(ids);
@@ -167,9 +178,6 @@ namespace DPool
                 _logger.LogInformation("DataPool正在运行,请勿重复运行!");
                 return;
             }
-
-
-
 
             IsRunning = true;
         }

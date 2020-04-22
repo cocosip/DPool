@@ -5,7 +5,7 @@ namespace DPool
 {
     /// <summary>数据包装
     /// </summary>
-    public class DataFuture<T> : IRedisListData where T : IRedisListData
+    public class DataFuture<T>
     {
         public T Data { get; set; }
 
@@ -26,11 +26,6 @@ namespace DPool
         public bool IsExpired(int expireSeconds)
         {
             return CreatedOn.AddSeconds(expireSeconds) < DateTime.Now;
-        }
-
-        public string SelectId()
-        {
-            return ((IRedisListData)Data).SelectId();
         }
     }
 }

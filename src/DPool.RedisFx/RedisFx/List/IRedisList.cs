@@ -12,8 +12,11 @@ namespace DPool.RedisFx.List
     /// <summary>Redis链表
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IRedisList<T> : IRedisList where T : IRedisListData
+    public interface IRedisList<T> : IRedisList
     {
+        /// <summary>获取注册信息
+        /// </summary>
+        RedisListDescriptor<T> GetDescriptor();
 
         /// <summary>添加数据元素
         /// </summary>

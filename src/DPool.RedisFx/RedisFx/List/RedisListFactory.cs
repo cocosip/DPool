@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace DPool.RedisFx.List
 {
@@ -30,7 +31,7 @@ namespace DPool.RedisFx.List
         /// <typeparam name="T"></typeparam>
         /// <param name="group"></param>
         /// <returns></returns>
-        public IRedisList<T> Get<T>(string group = "") where T : IRedisListData
+        public IRedisList<T> Get<T>(string group = "")
         {
             if (string.IsNullOrWhiteSpace(group))
             {
@@ -47,13 +48,9 @@ namespace DPool.RedisFx.List
             {
                 _logger.LogWarning("未能找到 Group为:'{0}',类型为:'{1}'的链表.", identifier.Group, identifier.DataType.FullName);
 
-                var descriptor = new RedisListDescriptor()
-                {
-                    Group = group,
-                    DataType = typeof(T)
-                };
+                var descriptor = _option.Descriptors.FirstOrDefault(x => x.DataType == typeof(T) && x.Group == group);
 
-                redisList = Create<T>(descriptor);
+                redisList = Create<T>((RedisListDescriptor<T>)descriptor);
                 if (!_redisListDict.TryAdd(identifier, redisList))
                 {
                     _logger.LogWarning("新增RedisList链表添加到集合失败!");
@@ -69,16 +66,17 @@ namespace DPool.RedisFx.List
         }
 
 
-        private IRedisList<T> Create<T>(RedisListDescriptor descriptor) where T : IRedisListData
+        private IRedisList<T> Create<T>(RedisListDescriptor<T> descriptor)
         {
 
             using (var scope = _provider.CreateScope())
             {
                 var redisList = scope.ServiceProvider.GetService<IRedisList<T>>();
 
-                var injectDescriptor = scope.ServiceProvider.GetService<RedisListDescriptor>();
+                var injectDescriptor = scope.ServiceProvider.GetService<RedisListDescriptor<T>>();
                 injectDescriptor.DataType = descriptor.DataType;
                 injectDescriptor.Group = descriptor.Group;
+                injectDescriptor.IdSelector = descriptor.IdSelector;
                 return redisList;
             }
         }

@@ -92,7 +92,7 @@ namespace DPool.RedisFx.Demo
     }
 
 
-    public class TestUser : IRedisListData
+    public class TestUser
     {
         public string Id { get; set; }
 

@@ -5,14 +5,14 @@ namespace DPool.RedisFx.List
 {
     /// <summary>Redis链表
     /// </summary>
-    public class RedisList<T> : IRedisList<T> where T : IRedisListData
+    public class RedisList<T> : IRedisList<T>
     {
         private readonly ILogger _logger;
-        private readonly RedisListDescriptor _descriptor;
+        private readonly RedisListDescriptor<T> _descriptor;
         private readonly IRedisClientProxy _clientProxy;
         private readonly IRedisListKeyGenerator _redisListKeyGenerator;
 
-        public RedisList(ILogger<RedisList<T>> logger, RedisListDescriptor descriptor, IRedisClientProxy clientProxy, IRedisListKeyGenerator redisListKeyGenerator)
+        public RedisList(ILogger<RedisList<T>> logger, RedisListDescriptor<T> descriptor, IRedisClientProxy clientProxy, IRedisListKeyGenerator redisListKeyGenerator)
         {
             _logger = logger;
             _clientProxy = clientProxy;
@@ -20,6 +20,12 @@ namespace DPool.RedisFx.List
             _redisListKeyGenerator = redisListKeyGenerator;
         }
 
+        /// <summary>获取注册信息
+        /// </summary>
+        public RedisListDescriptor<T> GetDescriptor()
+        {
+            return _descriptor;
+        }
 
         /// <summary>添加数据元素
         /// </summary>
@@ -33,7 +39,7 @@ namespace DPool.RedisFx.List
             {
                 foreach (var item in value)
                 {
-                    var id = ((IRedisListData)item).SelectId();
+                    var id = _descriptor.IdSelector(item);
                     var key = _redisListKeyGenerator.GenerateDataKey(_descriptor.DataType, _descriptor.Group, id);
                     //索引
                     p.RPush(indexKey, key);
@@ -55,7 +61,7 @@ namespace DPool.RedisFx.List
             {
                 foreach (var item in value)
                 {
-                    var id = ((IRedisListData)item).SelectId();
+                    var id = _descriptor.IdSelector(item);
                     var key = _redisListKeyGenerator.GenerateDataKey(_descriptor.DataType, _descriptor.Group, id);
 
                     //索引删除
