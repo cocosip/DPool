@@ -1,5 +1,4 @@
-﻿using DPool.RedisFx.List;
-using System;
+﻿using System;
 
 namespace DPool
 {

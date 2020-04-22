@@ -1,4 +1,9 @@
-﻿namespace DPool
+﻿using CSRedis;
+using DPool.GenericsPool;
+using System;
+using System.Collections.Generic;
+
+namespace DPool
 {
     /// <summary>配置信息
     /// </summary>
@@ -28,6 +33,42 @@
         /// <summary>多久的数据算超时
         /// </summary>
         public int DateTimeoutSeconds { get; set; } = 30;
+
+        /// <summary>泛型数据池的描述信息
+        /// </summary>
+        public List<GenericsDataPoolDescriptor> Descriptors { get; set; } = new List<GenericsDataPoolDescriptor>();
+
+        /// <summary>获取客户端的委托
+        /// </summary>
+        public Func<CSRedisClient> GetRedisClient { get; set; }
+
+        /// <summary>Ctor
+        /// </summary>
+        public DataPoolOption()
+        {
+
+        }
+
+        /// <summary>添加泛型数据池
+        /// </summary>
+        public DataPoolOption AddDescriptor<T>(GenericsDataPoolDescriptor<T> descriptor)
+        {
+            Descriptors.Add(descriptor);
+            return this;
+        }
+
+        /// <summary>添加泛型数据池
+        /// </summary>
+        public DataPoolOption AddDescriptor<T>(Func<T, string> idSelector, string group = DPoolConsts.DEFAULT_GROUP)
+        {
+            var descriptor = new GenericsDataPoolDescriptor<T>()
+            {
+                Group = group,
+                DataType = typeof(T),
+                IdSelector = idSelector
+            };
+            return AddDescriptor<T>(descriptor);
+        }
 
     }
 }

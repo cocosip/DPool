@@ -4,7 +4,7 @@ namespace DPool.Scheduling
 {
     /// <summary>调度器
     /// </summary>
-    internal interface IScheduleService
+    public interface IScheduleService
     {
         /// <summary>开始一个调度任务
         /// </summary>

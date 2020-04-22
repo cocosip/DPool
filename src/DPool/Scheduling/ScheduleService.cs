@@ -7,7 +7,7 @@ namespace DPool.Scheduling
 {
     /// <summary>调度器
     /// </summary>
-    internal class ScheduleService : IScheduleService
+    public class ScheduleService : IScheduleService
     {
         private readonly ILogger _logger;
         private readonly object SyncObject = new object();

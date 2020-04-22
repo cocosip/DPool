@@ -27,6 +27,7 @@ namespace DPool.RedisFx.Demo
                 {
                     c.RedisListIndexPrefix = "RedisListIndex";
                     c.RedisListDataPrefix = "RedisListData";
+                    c.AddDescriptor<TestUser>(RedisFxConsts.DEFAULT_GROUP, x => x.Id);
                 })
                 ;
 

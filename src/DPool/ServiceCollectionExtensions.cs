@@ -1,4 +1,6 @@
-﻿using DPool.Scheduling;
+﻿using DPool.GenericsPool;
+using DPool.Impl;
+using DPool.Scheduling;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
@@ -16,6 +18,10 @@ namespace DPool
                 .Configure<DataPoolOption>(configure)
                 .AddSingleton<IScheduleService, ScheduleService>()
                 .AddSingleton<DataPool>()
+                .AddSingleton<IGenericsDataPoolFactory, GenericsDataPoolFactory>()
+                .AddSingleton<IDPoolKeyGenerator, DPoolKeyGenerator>()
+                .AddScoped(typeof(GenericsDataPool<>))
+                .AddScoped(typeof(GenericsDataPoolOption<>))
                 ;
 
             return services;
