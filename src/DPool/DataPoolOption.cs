@@ -1,4 +1,5 @@
 ﻿using CSRedis;
+using DPool.GenericsPool;
 using System;
 using System.Collections.Generic;
 
@@ -41,7 +42,7 @@ namespace DPool
 
         /// <summary>添加泛型数据池
         /// </summary>
-        public DataPoolOption AddDescriptor<T>(GenericsDataPoolDescriptor<T> descriptor)
+        public DataPoolOption AddDescriptor<T>(GenericsDataPoolDescriptor<T> descriptor) where T : class, new()
         {
             Descriptors.Add(descriptor);
             return this;
@@ -49,12 +50,15 @@ namespace DPool
 
         /// <summary>添加泛型数据池
         /// </summary>
-        public DataPoolOption AddDescriptor<T>(Func<T, string> idSelector, string group = DPoolConsts.DEFAULT_GROUP)
+        public DataPoolOption AddDescriptor<T>(Func<T, string> idSelector, string group = DPoolConsts.DEFAULT_GROUP, string processGroup = DPoolConsts.PROCESS_GROUP) where T : class, new()
         {
             var descriptor = new GenericsDataPoolDescriptor<T>()
             {
                 Group = group,
                 DataType = typeof(T),
+                GenericsDataPoolType = typeof(IGenericsDataPool<T>),
+                GenericsDataPoolOptionType = typeof(GenericsDataPoolOption<T>),
+                ProcessGroup = processGroup,
                 IdSelector = idSelector
             };
             return AddDescriptor<T>(descriptor);

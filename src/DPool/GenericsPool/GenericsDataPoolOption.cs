@@ -14,6 +14,14 @@ namespace DPool.GenericsPool
         /// </summary>
         public virtual Type DataType { get; set; }
 
+        /// <summary>泛型数据池的类型
+        /// </summary>
+        public virtual Type GenericsDataPoolType { get; set; }
+
+        /// <summary>泛型数据池配置信息类型
+        /// </summary>
+        public virtual Type GenericsDataPoolOptionType { get; set; }
+
         /// <summary>进行中数据的前缀
         /// </summary>
         public string ProcessGroup { get; set; } = DPoolConsts.PROCESS_DATA_PREFIX;
@@ -31,6 +39,10 @@ namespace DPool.GenericsPool
         /// <summary>数据类型
         /// </summary>
         public override Type DataType { get; set; } = typeof(T);
+
+        /// <summary>泛型数据库配置信息类型
+        /// </summary>
+        public override Type GenericsDataPoolOptionType { get; set; } = typeof(GenericsDataPoolOption<T>);
 
     }
 }

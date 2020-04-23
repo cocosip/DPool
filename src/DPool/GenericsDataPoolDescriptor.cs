@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DPool.GenericsPool;
+using System;
 
 namespace DPool
 {
@@ -18,6 +19,14 @@ namespace DPool
         /// </summary>
         public virtual Type DataType { get; set; }
 
+        /// <summary>泛型数据池的类型
+        /// </summary>
+        public virtual Type GenericsDataPoolType { get; set; }
+
+        /// <summary>泛型数据池配置信息类型
+        /// </summary>
+        public virtual Type GenericsDataPoolOptionType { get; set; }
+
         /// <summary>Id选择器
         /// </summary>
         public virtual Delegate IdSelector { get; set; }
@@ -30,7 +39,6 @@ namespace DPool
         /// <summary>数据类型
         /// </summary>
         public override Type DataType { get; set; } = typeof(T);
-
 
     }
 }

@@ -270,9 +270,15 @@ namespace DPool.GenericsPool
                 }
             }
             var timeoutValue = timeoutList.Select(x => x.Data).ToArray();
-
-            //归还
-            Return(timeoutValue);
+            if (timeoutValue.Length > 0)
+            {
+                //归还
+                Return(timeoutValue);
+            }
+            else
+            {
+                _logger.LogDebug("本次自动归还数据个数为:'{0}'.", timeoutValue.Length);
+            }
         }
 
         /// <summary>加载本地数据
@@ -296,55 +302,57 @@ namespace DPool.GenericsPool
 
                     //获取索引全部数据
                     var ids = client.LRange(processIndexKey, 0, -1);
-                    var result = client.StartPipe(p =>
+                    if (ids.Length > 0)
                     {
-                        foreach (var id in ids)
+                        var result = client.StartPipe(p =>
                         {
-                            //当前数据Key
-                            var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
-
-                            p.HGet<int>(processDataKey, DPoolConsts.PROCESS_DATA_DATETIME_FIELD);
-                            p.HGet<T>(processDataKey, DPoolConsts.PROCESS_DATA_DATA_FIELD);
-                        }
-                    });
-
-                    int datetime = DateTimeUtil.ToInt32(default);
-                    T data = default;
-                    for (int i = 0; i < result.Length; i++)
-                    {
-                        if (i % 2 == 0)
-                        {
-                            datetime = Convert.ToInt32(result[i]);
-                        }
-                        else
-                        {
-                            data = result[i] as T;
-                            if (data != default)
+                            foreach (var id in ids)
                             {
-                                var id = _idSelector(data);
-                                var createdOn = DateTimeUtil.ToDateTime(datetime);
-                                var dataFuture = new DataFuture<T>(id, data, createdOn);
-                                //加入到本地队列中
-                                if (_processDict.TryAdd(id, dataFuture))
-                                {
-                                    _logger.LogDebug("将处理中数据加入本地队列失败,数据池信息:{0},Id:'{1}',创建时间:'{2}'.", Identifier, id, createdOn.ToString("yyyy-MM-dd HH:mm:ss"));
-                                }
+                                //当前数据Key
+                                var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
+
+                                p.HGet<int>(processDataKey, DPoolConsts.PROCESS_DATA_DATETIME_FIELD);
+                                p.HGet<T>(processDataKey, DPoolConsts.PROCESS_DATA_DATA_FIELD);
+                            }
+                        });
+
+                        int datetime = DateTimeUtil.ToInt32(default);
+                        T data = default;
+                        for (int i = 0; i < result.Length; i++)
+                        {
+                            if (i % 2 == 0)
+                            {
+                                datetime = Convert.ToInt32(result[i]);
                             }
                             else
                             {
-                                _logger.LogDebug("从Redis读取处理中数据数据为空,数据池信息:{0}", Identifier);
+                                data = result[i] as T;
+                                if (data != default)
+                                {
+                                    var id = _idSelector(data);
+                                    var createdOn = DateTimeUtil.ToDateTime(datetime);
+                                    var dataFuture = new DataFuture<T>(id, data, createdOn);
+                                    //加入到本地队列中
+                                    if (_processDict.TryAdd(id, dataFuture))
+                                    {
+                                        _logger.LogDebug("将处理中数据加入本地队列失败,数据池信息:{0},Id:'{1}',创建时间:'{2}'.", Identifier, id, createdOn.ToString("yyyy-MM-dd HH:mm:ss"));
+                                    }
+                                }
+                                else
+                                {
+                                    _logger.LogDebug("从Redis读取处理中数据数据为空,数据池信息:{0}", Identifier);
+                                }
                             }
+
                         }
 
-
                     }
-                    // var dataFutures = new DataFuture<T>();
-
 
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "从Redis中加载处理中的数据出错,当前泛型数据池信息:{0},异常信息:{1}.", Identifier, ex.Message);
+                    throw;
                 }
                 finally
                 {

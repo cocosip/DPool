@@ -35,7 +35,8 @@ namespace DPool.GenericsPool
             {
                 return false;
             }
-            return other is GenericsDataPoolIdentifier && Equals((GenericsDataPoolIdentifier)other);
+
+            return Group.Equals(other.Group, StringComparison.OrdinalIgnoreCase) && DataType == other.DataType;
         }
 
         /// <summary>重写相等方法
@@ -49,16 +50,20 @@ namespace DPool.GenericsPool
             return obj is GenericsDataPoolIdentifier && Equals((GenericsDataPoolIdentifier)obj);
         }
 
+
+
         /// <summary>重写获取HashCode方法
         /// </summary>
         public override int GetHashCode()
         {
-            return StringComparer.InvariantCulture.GetHashCode(Group) & DataType.GetHashCode();
+            return StringComparer.OrdinalIgnoreCase.GetHashCode(Group) & DataType.FullName.GetHashCode();
         }
 
         public override string ToString()
         {
             return $"[Group:{Group}-Type:{DataType.FullName}]";
         }
+
+
     }
 }

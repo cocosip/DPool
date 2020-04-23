@@ -25,13 +25,18 @@ namespace DPool.GenericsPool
         {
             using (var scope = _provider.CreateScope())
             {
-                var option = scope.ServiceProvider.GetService(typeof(GenericsDataPoolOption<>));
-                var convert = option as GenericsDataPoolOption;
+                var option = scope.ServiceProvider.GetService(descriptor.GenericsDataPoolOptionType);
+                var convert = (GenericsDataPoolOption)option;
+
                 convert.DataType = descriptor.DataType;
+                convert.GenericsDataPoolType = descriptor.GenericsDataPoolType;
+                convert.GenericsDataPoolOptionType = descriptor.GenericsDataPoolOptionType;
+
                 convert.Group = descriptor.Group;
+                convert.ProcessGroup = descriptor.ProcessGroup;
                 convert.IdSelector = descriptor.IdSelector;
 
-                var genericsDataPool = scope.ServiceProvider.GetService(typeof(IGenericsDataPool<>));
+                var genericsDataPool = scope.ServiceProvider.GetService(descriptor.GenericsDataPoolType);
                 _logger.LogDebug("创建泛型数据池,Group:'{0}',DataType:'{1}'", descriptor.Group, descriptor.DataType.FullName);
 
                 return genericsDataPool as IGenericsDataPool;
