@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Threading;
 
 namespace DPool
@@ -24,7 +23,7 @@ namespace DPool
 
         /// <summary>Ctor
         /// </summary>
-        public DataPool(ILogger<DataPool> logger, IServiceProvider provider, IOptions<DataPoolOption> option, IGenericsDataPoolFactory genericsDataPoolFactory)
+        public DataPool(ILogger<DataPool> logger, IOptions<DataPoolOption> option, IGenericsDataPoolFactory genericsDataPoolFactory)
         {
             _logger = logger;
             _option = option.Value;
