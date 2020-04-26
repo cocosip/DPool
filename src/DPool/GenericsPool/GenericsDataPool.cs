@@ -77,6 +77,10 @@ namespace DPool.GenericsPool
             try
             {
                 var value = client.LRange<T>(key, 0, count);
+                if (value == null)
+                {
+                    return null;
+                }
 
                 //当前数据的唯一键
                 var ids = value.Select(x => _idSelector(x)).Distinct().ToArray();
