@@ -320,7 +320,7 @@ namespace DPool.GenericsPool
                             }
                         });
 
-                        int datetime = DateTimeUtil.ToInt32(default);
+                        int datetime = DateTimeUtil.ToInt32(DateTime.Now.AddDays(-1));
                         T data = default;
                         for (int i = 0; i < result.Length; i++)
                         {
