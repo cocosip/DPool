@@ -76,14 +76,18 @@ namespace DPool.GenericsPool
 
             try
             {
-                var value = client.LRange<T>(key, 0, count);
-                if (value == null)
+                var value = client.LRange<T>(key, 0, count).Where(x => x != null).ToArray();
+                if (value.Length <= 0)
                 {
                     return null;
                 }
-
                 //当前数据的唯一键
                 var ids = value.Select(x => _idSelector(x)).Distinct().ToArray();
+                if (ids.Length <= 0)
+                {
+                    _logger.LogDebug("获取类型'{0}'的数据,去重后当前唯一id值的集合为空。", typeof(T).FullName);
+                }
+
                 var time = DateTimeUtil.ToInt32(DateTime.Now);
 
                 client.StartPipe(p =>
@@ -112,9 +116,12 @@ namespace DPool.GenericsPool
                 //添加到处理中的
                 foreach (var dataFeature in dataFeatures)
                 {
-                    if (!_processDict.TryAdd(dataFeature.Id, dataFeature))
+                    if (_processDict.ContainsKey(dataFeature.Id))
                     {
-                        _logger.LogWarning("添加待归还的数据失败,当前数据池:{0},数据Id:'{1}'.", Identifier, dataFeature.Id);
+                        if (!_processDict.TryAdd(dataFeature.Id, dataFeature))
+                        {
+                            _logger.LogWarning("添加待归还的数据失败,当前数据池:{0},数据Id:'{1}'.", Identifier, dataFeature.Id);
+                        }
                     }
                 }
 
@@ -321,7 +328,7 @@ namespace DPool.GenericsPool
                         });
 
                         int datetime = DateTimeUtil.ToInt32(DateTime.Now.AddDays(-1));
-                        T data = default;
+                        T data = null;
                         for (int i = 0; i < result.Length; i++)
                         {
                             if (i % 2 == 0)
@@ -331,7 +338,7 @@ namespace DPool.GenericsPool
                             else
                             {
                                 data = result[i] as T;
-                                if (data != default)
+                                if (data != null)
                                 {
                                     var id = _idSelector(data);
                                     var createdOn = DateTimeUtil.ToDateTime(datetime);

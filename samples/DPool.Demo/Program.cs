@@ -33,7 +33,7 @@ namespace DPool.Demo
                     .AddDPool(c =>
                     {
                         c.AddDescriptor<TestUser>(x => x.Id.ToString());
-                        c.GetRedisClient = () => new CSRedis.CSRedisClient("192.168.0.6:6379,password=123456,prefix=my_");
+                        c.GetRedisClient = () => new CSRedis.CSRedisClient("192.168.0.38:6379,password=123456,prefix=my_");
 
                     });
 
@@ -41,6 +41,8 @@ namespace DPool.Demo
                 provider.ConfigureDPool();
 
                 var dataPool = provider.GetService<IDataPool>();
+
+                var d1 = dataPool.Get<TestUser>(10);
 
                 for (int i = 0; i < 100; i++)
                 {
