@@ -394,7 +394,7 @@ namespace DPool.GenericsPool
             {
                 if (!_processDict.TryRemove(id, out DataFuture<T> _))
                 {
-                    _logger.LogWarning("从本地集合中移除处理中的数据失败,当前数据池:{0},数据Id:'{1}'.", Identifier, id);
+                    _logger.LogTrace("本地集合中已经移除该数据,数据池:{0},数据Id:'{1}'.", Identifier, id);
                 }
             }
         }
