@@ -162,10 +162,9 @@ namespace DPool.GenericsPool
                         p.Del(processDataKey);
                         ////删除数据
                         //p.HDel(processDataKey);
+                        //删除索引
+                        p.LRem(processIndexKey, 1, id);
                     }
-
-                    //删除索引
-                    p.LRem(processIndexKey, 0, ids);
 
                     //添加到数据中
                     p.RPush<T>(key, value);
@@ -196,18 +195,17 @@ namespace DPool.GenericsPool
                     foreach (var item in value)
                     {
                         var id = _idSelector(item);
-
                         //当前数据Key
                         var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
 
                         p.Del(processDataKey);
                         ////删除数据
                         //p.HDel(processDataKey);
+                        //删除索引
+                        p.LRem(processIndexKey, 1, id);
                     }
-
-                    //删除索引
-                    p.LRem(processIndexKey, 0, ids);
                 });
+
 
                 //从本地字典中删除
                 RemoveLocalProcess(ids);
