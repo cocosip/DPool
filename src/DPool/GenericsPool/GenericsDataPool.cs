@@ -76,7 +76,7 @@ namespace DPool.GenericsPool
 
             try
             {
-                var value = client.LRange<T>(key, 0, count).Where(x => x != null).ToArray();
+                var value = client.LRange<T>(key, 0, count - 1).Where(x => x != null).ToArray();
                 if (value.Length <= 0)
                 {
                     return null;
@@ -110,7 +110,7 @@ namespace DPool.GenericsPool
                     }
 
                     //移除
-                    p.LTrim(key, count + 1, -1);
+                    p.LTrim(key, count, -1);
                 });
 
                 //添加到处理中的

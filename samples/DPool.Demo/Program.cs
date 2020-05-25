@@ -32,8 +32,10 @@ namespace DPool.Demo
                     })
                     .AddDPool(c =>
                     {
-                        c.AddDescriptor<TestUser>(x => x.Id.ToString());
-                        c.GetRedisClient = () => new CSRedis.CSRedisClient("192.168.0.38:6379,password=123456,prefix=my_");
+                        c.AddDescriptor<TestUser>(x => x.Id);
+                        c.GetRedisClient = () => new CSRedis.CSRedisClient("mymaster,password=123456,prefix=my_", new string[] {
+                            "192.168.0.38:26379","192.168.0.38:26379","192.168.0.87:26379"
+                        });
 
                     });
 
@@ -42,18 +44,33 @@ namespace DPool.Demo
 
                 var dataPool = provider.GetService<IDataPool>();
 
-                var d1 = dataPool.Get<TestUser>(10);
+                // var d1 = dataPool.Get<TestUser>(10);
 
                 for (int i = 0; i < 100; i++)
                 {
                     dataPool.Write<TestUser>("", new TestUser()
                     {
-                        Id = i,
+                        Id = "id_" + i,
                         Name = "zhangsan" + i
                     });
                 }
 
-                dataPool.Get<TestUser>(20);
+                int count = 1;
+                while (count > 0)
+                {
+                    var value = dataPool.Get<TestUser>(20);
+                    if (value != null)
+                    {
+                        count = value.Length;
+                        dataPool.Release<TestUser>("", value);
+                    }
+                    else
+                    {
+                        count = 0;
+                    }
+                    Console.WriteLine("本次获取数据:{0}", value?.Length);
+                }
+
 
             }, TaskCreationOptions.LongRunning);
         }
@@ -61,7 +78,7 @@ namespace DPool.Demo
 
         class TestUser
         {
-            public int Id { get; set; }
+            public string Id { get; set; }
 
             public string Name { get; set; }
         }
