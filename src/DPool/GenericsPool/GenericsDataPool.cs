@@ -69,7 +69,7 @@ namespace DPool.GenericsPool
             var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOption.Group, _genericsOption.DataType);
             var lockName = _dPoolKeyGenerator.GenerateDataLockName(_genericsOption.Group, _genericsOption.DataType);
             var client = _redisClientProxy.GetClient();
-            var dataLock = client.Lock(lockName, 2);
+            var dataLock = client.Lock(lockName, 5);
 
             var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType);
             var dataFeatures = new List<DataFuture<T>>();
@@ -116,11 +116,11 @@ namespace DPool.GenericsPool
                 //添加到处理中的
                 foreach (var dataFeature in dataFeatures)
                 {
-                    if (_processDict.ContainsKey(dataFeature.Id))
+                    if (!_processDict.ContainsKey(dataFeature.Id))
                     {
                         if (!_processDict.TryAdd(dataFeature.Id, dataFeature))
                         {
-                            _logger.LogWarning("添加待归还的数据失败,当前数据池:{0},数据Id:'{1}'.", Identifier, dataFeature.Id);
+                            _logger.LogDebug("添加待归还的数据失败,当前数据池:{0},数据Id:'{1}'.", Identifier, dataFeature.Id);
                         }
                     }
                 }
@@ -152,6 +152,9 @@ namespace DPool.GenericsPool
                 var ids = value.Select(x => _idSelector(x)).ToArray();
                 client.StartPipe(p =>
                 {
+                    //添加到数据中
+                    p.RPush<T>(key, value);
+
                     foreach (var item in value)
                     {
                         var id = _idSelector(item);
@@ -165,9 +168,6 @@ namespace DPool.GenericsPool
                         //删除索引
                         p.LRem(processIndexKey, 1, id);
                     }
-
-                    //添加到数据中
-                    p.RPush<T>(key, value);
                 });
 
                 //从本地字典中删除

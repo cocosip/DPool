@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace DPool.Demo
@@ -66,10 +67,12 @@ namespace DPool.Demo
                     }
                     else
                     {
+                        value = new TestUser[0];
                         count = 0;
                     }
-                    Console.WriteLine("本次获取数据:{0}", value?.Length);
+                    Console.WriteLine("本次获取数据:{0},id集合为:[{1}]", value.Length, string.Join(",", value.Select(x => x.Id)));
                 }
+
 
 
             }, TaskCreationOptions.LongRunning);
