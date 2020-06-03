@@ -121,6 +121,15 @@ namespace DPool
         {
             foreach (var descriptor in _option.Descriptors)
             {
+                if (string.IsNullOrWhiteSpace(descriptor.Group))
+                {
+                    descriptor.Group = _option.DefaultGroup;
+                }
+                if (string.IsNullOrWhiteSpace(descriptor.ProcessGroup))
+                {
+                    descriptor.ProcessGroup = _option.DefaultProcessGroup;
+                }
+
                 var genericsDataPool = _genericsDataPoolFactory.CreateGenericsDataPool(descriptor);
 
                 if (!_genericsDataPoolDict.TryAdd(genericsDataPool.Identifier, genericsDataPool))

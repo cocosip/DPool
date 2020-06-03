@@ -9,9 +9,13 @@ namespace DPool
     /// </summary>
     public class DataPoolOption
     {
-        /// <summary>默认分组
+        /// <summary>如果没有分组名的时候,默认用该分组名
         /// </summary>
         public string DefaultGroup { get; set; } = DPoolConsts.DEFAULT_GROUP;
+
+        /// <summary>处理中数据分组
+        /// </summary>
+        public string DefaultProcessGroup { get; set; } = DPoolConsts.PROCESS_GROUP;
 
         /// <summary>数据锁定的秒数
         /// </summary>
@@ -50,7 +54,7 @@ namespace DPool
 
         /// <summary>添加泛型数据池
         /// </summary>
-        public DataPoolOption AddDescriptor<T>(Func<T, string> idSelector, string group = DPoolConsts.DEFAULT_GROUP, string processGroup = DPoolConsts.PROCESS_GROUP) where T : class, new()
+        public DataPoolOption AddDescriptor<T>(Func<T, string> idSelector, string group = "", string processGroup = "") where T : class, new()
         {
             var descriptor = new GenericsDataPoolDescriptor<T>()
             {
