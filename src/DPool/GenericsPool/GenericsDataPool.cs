@@ -109,8 +109,11 @@ namespace DPool.GenericsPool
                         dataFeatures.Add(new DataFuture<T>(id, item));
                     }
 
-                    //移除
-                    p.LTrim(key, count, -1);
+                    if (value.Length > 0)
+                    {
+                        //移除
+                        p.LTrim(key, value.Length, -1);
+                    }
                 });
 
                 //添加到处理中的
