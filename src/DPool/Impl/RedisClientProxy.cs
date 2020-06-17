@@ -7,7 +7,7 @@ namespace DPool.Impl
     /// </summary>
     public class RedisClientProxy : IRedisClientProxy
     {
-        private readonly object SyncObject = new object();
+        private readonly object _syncObject = new object();
         private readonly DataPoolOption _option;
         private CSRedisClient _client = null;
         public RedisClientProxy(IOptions<DataPoolOption> option)
@@ -19,7 +19,7 @@ namespace DPool.Impl
         /// </summary>
         public CSRedisClient GetClient()
         {
-            lock (SyncObject)
+            lock (_syncObject)
             {
                 if (_client == null)
                 {

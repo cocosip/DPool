@@ -32,7 +32,7 @@ namespace DPool.GenericsPool
 
         private int _isRunning = 0;
         private int _isLoading = 0;
-        private Func<T, string> _idSelector;
+        private readonly Func<T, string> _idSelector;
         private readonly ConcurrentDictionary<string, DataFuture<T>> _processDict;
 
         public GenericsDataPool(ILogger<GenericsDataPool<T>> logger, IOptions<DataPoolOption> option, GenericsDataPoolOption<T> genericsOption, IScheduleService scheduleService, IDPoolKeyGenerator dPoolKeyGenerator, IRedisClientProxy redisClientProxy)
