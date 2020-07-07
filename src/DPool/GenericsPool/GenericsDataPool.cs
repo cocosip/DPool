@@ -1,5 +1,4 @@
-﻿using DPool.Scheduling;
-using DPool.Utility;
+﻿using DPool.Utility;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -26,25 +25,26 @@ namespace DPool.GenericsPool
         private readonly ILogger _logger;
         private readonly DataPoolOption _option;
         private readonly GenericsDataPoolOption<T> _genericsOption;
-        private readonly IScheduleService _scheduleService;
         private readonly IDPoolKeyGenerator _dPoolKeyGenerator;
         private readonly IRedisClientProxy _redisClientProxy;
 
         private int _isRunning = 0;
         private int _isLoading = 0;
+        private CancellationTokenSource _cts;
         private readonly Func<T, string> _idSelector;
         private readonly ConcurrentDictionary<string, DataFuture<T>> _processDict;
 
-        public GenericsDataPool(ILogger<GenericsDataPool<T>> logger, IOptions<DataPoolOption> option, GenericsDataPoolOption<T> genericsOption, IScheduleService scheduleService, IDPoolKeyGenerator dPoolKeyGenerator, IRedisClientProxy redisClientProxy)
+        public GenericsDataPool(ILogger<GenericsDataPool<T>> logger, IOptions<DataPoolOption> option, GenericsDataPoolOption<T> genericsOption, IDPoolKeyGenerator dPoolKeyGenerator, IRedisClientProxy redisClientProxy)
         {
             _logger = logger;
             _option = option.Value;
             _genericsOption = genericsOption;
-            _scheduleService = scheduleService;
             _dPoolKeyGenerator = dPoolKeyGenerator;
             _redisClientProxy = redisClientProxy;
 
             Identifier = BuildIdentifier(_genericsOption);
+
+            _cts = new CancellationTokenSource();
 
             _idSelector = (Func<T, string>)_genericsOption.IdSelector;
             _processDict = new ConcurrentDictionary<string, DataFuture<T>>();
@@ -231,7 +231,7 @@ namespace DPool.GenericsPool
             //加载数据到本地
             LoadLocalProcess();
 
-            StartScanTimeoutDataTask();
+            StartScanTimeoutData();
 
             Interlocked.Exchange(ref _isRunning, 1);
             _logger.LogInformation("GenericsDataPool 运行成功! 当前信息:{0}", Identifier);
@@ -247,7 +247,7 @@ namespace DPool.GenericsPool
                 return;
             }
 
-            StopScanTimeoutDataTask();
+            _cts.Cancel();
 
             _processDict.Clear();
 
@@ -259,38 +259,43 @@ namespace DPool.GenericsPool
 
         #region Private method
 
-        private void StartScanTimeoutDataTask()
+        private void StartScanTimeoutData()
         {
-            _scheduleService.StartTask($"{_genericsOption.Group}.{GetType().FullName}.ScanTimeoutData", ScanTimeoutData, 1000, _option.ScanTimeoutDataInterval);
-        }
-
-        private void StopScanTimeoutDataTask()
-        {
-            _scheduleService.StopTask($"{_genericsOption.Group}.{GetType().FullName}.ScanTimeoutData");
-        }
-
-        /// <summary>扫描过期的数据
-        /// </summary>
-        private void ScanTimeoutData()
-        {
-            var timeoutList = new List<DataFuture<T>>();
-            foreach (var entry in _processDict)
+            Task.Run(async () =>
             {
-                if (entry.Value.IsTimeout(_option.DataTimeoutSeconds))
+                await Task.Delay(2000);
+
+                while (!_cts.Token.IsCancellationRequested)
                 {
-                    timeoutList.Add(entry.Value);
+                    try
+                    {
+                        var timeoutList = new List<DataFuture<T>>();
+                        foreach (var entry in _processDict)
+                        {
+                            if (entry.Value.IsTimeout(_option.DataTimeoutSeconds))
+                            {
+                                timeoutList.Add(entry.Value);
+                            }
+                        }
+                        var timeoutValue = timeoutList.Select(x => x.Data).ToArray();
+                        if (timeoutValue.Length > 0)
+                        {
+                            //归还
+                            Return(timeoutValue);
+                        }
+                        else
+                        {
+                            _logger.LogDebug("本次自动归还数据个数为:'{0}'.", timeoutValue.Length);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "扫描过期数据出现异常,异常信息:{0} .", ex.Message);
+                    }
+
+                    await Task.Delay(_option.ScanTimeoutDataInterval);
                 }
-            }
-            var timeoutValue = timeoutList.Select(x => x.Data).ToArray();
-            if (timeoutValue.Length > 0)
-            {
-                //归还
-                Return(timeoutValue);
-            }
-            else
-            {
-                _logger.LogDebug("本次自动归还数据个数为:'{0}'.", timeoutValue.Length);
-            }
+            });
         }
 
         /// <summary>加载本地数据
