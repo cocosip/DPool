@@ -25,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DPool.Tests", "test\DPool.T
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{FB7DBDE1-3EF8-4515-80CA-35D5E7E58999}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DPool.Demo", "samples\DPool.Demo\DPool.Demo.csproj", "{4865FECE-6C8B-41D4-8DC0-9998856F7A27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DPool.Demo", "samples\DPool.Demo\DPool.Demo.csproj", "{4865FECE-6C8B-41D4-8DC0-9998856F7A27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

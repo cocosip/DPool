@@ -30,7 +30,7 @@ namespace DPool.GenericsPool
 
         private int _isRunning = 0;
         private int _isLoading = 0;
-        private CancellationTokenSource _cts;
+        private readonly CancellationTokenSource _cts;
         private readonly Func<T, string> _idSelector;
         private readonly ConcurrentDictionary<string, DataFuture<T>> _processDict;
 
@@ -350,7 +350,7 @@ namespace DPool.GenericsPool
                                     var createdOn = DateTimeUtil.ToDateTime(datetime);
                                     var dataFuture = new DataFuture<T>(id, data, createdOn);
                                     //加入到本地队列中
-                                    if (_processDict.TryAdd(id, dataFuture))
+                                    if (!_processDict.TryAdd(id, dataFuture))
                                     {
                                         _logger.LogDebug("将处理中数据加入本地队列失败,数据池信息:{0},Id:'{1}',创建时间:'{2}'.", Identifier, id, createdOn.ToString("yyyy-MM-dd HH:mm:ss"));
                                     }
