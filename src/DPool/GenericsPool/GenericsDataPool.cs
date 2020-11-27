@@ -282,6 +282,7 @@ namespace DPool.GenericsPool
                         {
                             //归还
                             Return(timeoutValue);
+                            _logger.LogDebug("本次归还数据:'{0}'条.", timeoutValue.Length);
                         }
                         else
                         {
@@ -319,6 +320,10 @@ namespace DPool.GenericsPool
 
                     //获取索引全部数据
                     var ids = client.LRange(processIndexKey, 0, -1);
+
+                    //被查询到数据的id,
+                    var queryIds = new List<string>();
+
                     if (ids.Length > 0)
                     {
                         var result = client.StartPipe(p =>
@@ -354,6 +359,8 @@ namespace DPool.GenericsPool
                                     {
                                         _logger.LogDebug("将处理中数据加入本地队列失败,数据池信息:{0},Id:'{1}',创建时间:'{2}'.", Identifier, id, createdOn.ToString("yyyy-MM-dd HH:mm:ss"));
                                     }
+
+                                    queryIds.Add(id);
                                 }
                                 else
                                 {
@@ -363,7 +370,26 @@ namespace DPool.GenericsPool
 
                         }
 
+                        _logger.LogDebug("查询到索引id数量:{0},索引有效对应的数据量:{1}", ids.Length, queryIds.Count);
+
+                        //需要删除的索引
+                        var removeIds = ids.Except(queryIds).ToList();
+                        if (removeIds.Any())
+                        {
+                            var removeResult = client.StartPipe(p =>
+                            {
+                                foreach (var id in removeIds)
+                                {
+                                    p.LRem(processIndexKey, 1, id);
+                                }
+                            });
+
+                            _logger.LogDebug("本次需要删除无效索引数量:'{0}'个,Redis删除:'{1}'个.", removeIds.Count, removeResult.Length);
+                        }
+
                     }
+
+
 
                 }
                 catch (Exception ex)
