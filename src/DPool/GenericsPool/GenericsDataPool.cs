@@ -26,7 +26,7 @@ namespace DPool.GenericsPool
         private readonly DataPoolOption _option;
         private readonly GenericsDataPoolOption<T> _genericsOption;
         private readonly IDPoolKeyGenerator _dPoolKeyGenerator;
-        private readonly IRedisClientProxy _redisClientProxy;
+
 
         private int _isRunning = 0;
         private int _isLoading = 0;
@@ -34,13 +34,12 @@ namespace DPool.GenericsPool
         private readonly Func<T, string> _idSelector;
         private readonly ConcurrentDictionary<string, DataFuture<T>> _processDict;
 
-        public GenericsDataPool(ILogger<GenericsDataPool<T>> logger, IOptions<DataPoolOption> option, GenericsDataPoolOption<T> genericsOption, IDPoolKeyGenerator dPoolKeyGenerator, IRedisClientProxy redisClientProxy)
+        public GenericsDataPool(ILogger<GenericsDataPool<T>> logger, IOptions<DataPoolOption> option, GenericsDataPoolOption<T> genericsOption, IDPoolKeyGenerator dPoolKeyGenerator)
         {
             _logger = logger;
             _option = option.Value;
             _genericsOption = genericsOption;
             _dPoolKeyGenerator = dPoolKeyGenerator;
-            _redisClientProxy = redisClientProxy;
 
             Identifier = BuildIdentifier(_genericsOption);
 
@@ -57,8 +56,7 @@ namespace DPool.GenericsPool
         public long Write(T[] value)
         {
             var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOption.Group, _genericsOption.DataType);
-            var client = _redisClientProxy.GetClient();
-            return client.RPush<T>(key, value);
+            return RedisHelper.RPush<T>(key, value);
         }
 
         /// <summary>获取指定数量的数据
@@ -68,15 +66,14 @@ namespace DPool.GenericsPool
         {
             var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOption.Group, _genericsOption.DataType);
             var lockName = _dPoolKeyGenerator.GenerateDataLockName(_genericsOption.Group, _genericsOption.DataType);
-            var client = _redisClientProxy.GetClient();
-            var dataLock = client.Lock(lockName, 5);
+            var dataLock = RedisHelper.Lock(lockName, 5);
 
             var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType);
             var dataFeatures = new List<DataFuture<T>>();
 
             try
             {
-                var value = client.LRange<T>(key, 0, count - 1).Where(x => x != null).ToArray();
+                var value = RedisHelper.LRange<T>(key, 0, count - 1).Where(x => x != null).ToArray();
                 if (value.Length <= 0)
                 {
                     return null;
@@ -90,7 +87,7 @@ namespace DPool.GenericsPool
 
                 var time = DateTimeUtil.ToInt32(DateTime.Now);
 
-                client.StartPipe(p =>
+                RedisHelper.StartPipe(p =>
                 {
                     //索引
                     p.RPush(processIndexKey, ids);
@@ -148,12 +145,11 @@ namespace DPool.GenericsPool
         {
             var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOption.Group, _genericsOption.DataType);
             var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType);
-            var client = _redisClientProxy.GetClient();
-
+   
             try
             {
                 var ids = value.Select(x => _idSelector(x)).ToArray();
-                client.StartPipe(p =>
+                RedisHelper.StartPipe(p =>
                 {
                     //添加到数据中
                     p.RPush<T>(key, value);
@@ -188,12 +184,11 @@ namespace DPool.GenericsPool
         public void Release(params T[] value)
         {
             var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType);
-            var client = _redisClientProxy.GetClient();
 
             try
             {
                 var ids = value.Select(x => _idSelector(x)).ToArray();
-                client.StartPipe(p =>
+                RedisHelper.StartPipe(p =>
                 {
                     foreach (var item in value)
                     {
@@ -316,17 +311,17 @@ namespace DPool.GenericsPool
                 try
                 {
                     var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType);
-                    var client = _redisClientProxy.GetClient();
+                   
 
                     //获取索引全部数据
-                    var ids = client.LRange(processIndexKey, 0, -1);
+                    var ids = RedisHelper.LRange(processIndexKey, 0, -1);
 
                     //被查询到数据的id,
                     var queryIds = new List<string>();
 
                     if (ids.Length > 0)
                     {
-                        var result = client.StartPipe(p =>
+                        var result = RedisHelper.StartPipe(p =>
                         {
                             foreach (var id in ids)
                             {
@@ -376,7 +371,7 @@ namespace DPool.GenericsPool
                         var removeIds = ids.Except(queryIds).ToList();
                         if (removeIds.Any())
                         {
-                            var removeResult = client.StartPipe(p =>
+                            var removeResult = RedisHelper.StartPipe(p =>
                             {
                                 foreach (var id in removeIds)
                                 {

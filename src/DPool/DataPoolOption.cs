@@ -31,17 +31,13 @@ namespace DPool
 
         /// <summary>泛型数据池的描述信息
         /// </summary>
-        public List<GenericsDataPoolDescriptor> Descriptors { get; set; } = new List<GenericsDataPoolDescriptor>();
-
-        /// <summary>获取客户端的委托
-        /// </summary>
-        public Func<CSRedisClient> GetRedisClient { get; set; }
+        public List<GenericsDataPoolDescriptor> Descriptors { get; set; }
 
         /// <summary>Ctor
         /// </summary>
         public DataPoolOption()
         {
-
+            Descriptors = new List<GenericsDataPoolDescriptor>();
         }
 
         /// <summary>添加泛型数据池

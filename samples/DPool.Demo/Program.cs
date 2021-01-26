@@ -13,7 +13,8 @@ namespace DPool.Demo
         {
             Console.WriteLine("DPool测试程序...");
 
-            RunTest();
+             RunTest();
+ 
 
             Console.ReadLine();
         }
@@ -25,6 +26,13 @@ namespace DPool.Demo
             {
 
                 IServiceCollection services = new ServiceCollection();
+                RedisHelper.Initialization(new CSRedisClient("mymaster,password=123456,prefix=my_", new string[] { "192.168.0.38:26379", "192.168.0.39:26379", "192.168.0.87:26379" }, false));
+
+
+                //RedisHelper.Initialization(new CSRedisClient("192.168.0.38:6379,password=123456,prefix=my_"));
+                //RedisHelper.Set("ss", "123");
+                //Console.WriteLine(RedisHelper.Get("ss"));
+
                 services
                     .AddLogging(l =>
                     {
@@ -34,10 +42,6 @@ namespace DPool.Demo
                     .AddDPool(c =>
                     {
                         c.AddDescriptor<TestUser>(x => x.Id);
-                        c.GetRedisClient = () => new CSRedis.CSRedisClient("mymaster,password=123456,prefix=my_", new string[] {
-                            "192.168.0.38:26379","192.168.0.38:26379","192.168.0.87:26379"
-                        });
-
                     });
 
                 var provider = services.BuildServiceProvider();
