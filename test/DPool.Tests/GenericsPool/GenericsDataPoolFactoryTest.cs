@@ -31,7 +31,7 @@ namespace DPool.Tests.GenericsPool
                 Group = "Group1",
                 DataType = this.GetType(),
                 GenericsDataPoolType = typeof(IGenericsDataPool<GenericsDataPoolFactoryTest>),
-                GenericsDataPoolOptionType = typeof(GenericsDataPoolOption<GenericsDataPoolFactoryTest>),
+                GenericsDataPoolOptionType = typeof(GenericsDataPoolOptions<GenericsDataPoolFactoryTest>),
                 ProcessGroup = "Process1",
                 IdSelector = new Func<GenericsDataPoolFactoryTest, string>(t => { return "1"; })
             });

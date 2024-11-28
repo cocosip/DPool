@@ -26,7 +26,7 @@ namespace DPool.GenericsPool
             using (var scope = _provider.CreateScope())
             {
                 var option = scope.ServiceProvider.GetService(descriptor.GenericsDataPoolOptionType);
-                var convert = (GenericsDataPoolOption)option;
+                var convert = (GenericsDataPoolOptions)option;
 
                 convert.DataType = descriptor.DataType;
                 convert.GenericsDataPoolType = descriptor.GenericsDataPoolType;

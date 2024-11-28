@@ -10,11 +10,11 @@ namespace DPool
     {
         /// <summary>配置数据池
         /// </summary>
-        public static IServiceProvider ConfigureDPool(this IServiceProvider provider, Action<DataPoolOption> configure = null)
+        public static IServiceProvider ConfigureDPool(this IServiceProvider provider, Action<DataPoolOptions> configure = null)
         {
             if (configure != null)
             {
-                var option = provider.GetService<IOptions<DataPoolOption>>().Value;
+                var option = provider.GetService<IOptions<DataPoolOptions>>().Value;
                 configure(option);
             }
             var dataPool = provider.GetService<IDataPool>();
