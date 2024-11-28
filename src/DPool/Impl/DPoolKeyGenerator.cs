@@ -7,10 +7,15 @@ namespace DPool.Impl
     /// </summary>
     public class DPoolKeyGenerator : IDPoolKeyGenerator
     {
-        private readonly DataPoolOptions _option;
-        public DPoolKeyGenerator(IOptions<DataPoolOptions> option)
+        private readonly DataPoolOptions _options;
+        
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="options"></param>
+        public DPoolKeyGenerator(IOptions<DataPoolOptions> options)
         {
-            _option = option.Value;
+            _options = options.Value;
         }
 
         /// <summary>生成数据Key

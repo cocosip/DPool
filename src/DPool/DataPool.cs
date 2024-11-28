@@ -7,34 +7,43 @@ using System.Threading;
 
 namespace DPool
 {
-    /// <summary>数据池
+    /// <summary>
+    /// 数据池
     /// </summary>
     public class DataPool : IDataPool
     {
+        /// <summary>
+        /// IsRunning
+        /// </summary>
         public bool IsRunning { get { return _isRunning == 1; } }
 
         private int _isRunning = 0;
 
         private readonly ILogger _logger;
-        private readonly DataPoolOptions _option;
+        private readonly DataPoolOptions _options;
         private readonly IGenericsDataPoolFactory _genericsDataPoolFactory;
 
         private readonly ConcurrentDictionary<GenericsDataPoolIdentifier, IGenericsDataPool> _genericsDataPoolDict;
 
         /// <summary>Ctor
         /// </summary>
-        public DataPool(ILogger<DataPool> logger, IOptions<DataPoolOptions> option, IGenericsDataPoolFactory genericsDataPoolFactory)
+        public DataPool(
+            ILogger<DataPool> logger, 
+            IOptions<DataPoolOptions> options, 
+            IGenericsDataPoolFactory genericsDataPoolFactory)
         {
             _logger = logger;
-            _option = option.Value;
+            _options = options.Value;
             _genericsDataPoolFactory = genericsDataPoolFactory;
 
             _genericsDataPoolDict = new ConcurrentDictionary<GenericsDataPoolIdentifier, IGenericsDataPool>();
         }
 
-        /// <summary>添加数据
+        /// <summary>
+        /// 添加数据
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <param name="group"></param>
         /// <param name="value"></param>
         /// <returns></returns>
         public long Write<T>(string group = "", params T[] value) where T : class, new()
@@ -43,7 +52,8 @@ namespace DPool
             return genericsDataPool.Write(value);
         }
 
-        /// <summary>获取数据
+        /// <summary>
+        /// 获取数据
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="count"></param>
@@ -55,7 +65,8 @@ namespace DPool
             return genericsDataPool.Get(count);
         }
 
-        /// <summary>归还数据
+        /// <summary>
+        /// 归还数据
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="group"></param>
@@ -66,12 +77,13 @@ namespace DPool
             genericsDataPool.Return(value);
         }
 
-        /// <summary>释放数据
+
+        /// <summary>
+        /// 释放数据
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="group"></param>
         /// <param name="value"></param>
-        /// <returns></returns>
         public void Release<T>(string group = "", params T[] value) where T : class, new()
         {
             var genericsDataPool = FindGenericsDataPool<T>(group);
@@ -119,15 +131,15 @@ namespace DPool
         /// </summary>
         private void Initialize()
         {
-            foreach (var descriptor in _option.Descriptors)
+            foreach (var descriptor in _options.Descriptors)
             {
                 if (string.IsNullOrWhiteSpace(descriptor.Group))
                 {
-                    descriptor.Group = _option.DefaultGroup;
+                    descriptor.Group = _options.DefaultGroup;
                 }
                 if (string.IsNullOrWhiteSpace(descriptor.ProcessGroup))
                 {
-                    descriptor.ProcessGroup = _option.DefaultProcessGroup;
+                    descriptor.ProcessGroup = _options.DefaultProcessGroup;
                 }
 
                 var genericsDataPool = _genericsDataPoolFactory.CreateGenericsDataPool(descriptor);
@@ -151,7 +163,7 @@ namespace DPool
         {
             if (string.IsNullOrWhiteSpace(group))
             {
-                group = _option.DefaultGroup;
+                group = _options.DefaultGroup;
             }
             var identifier = new GenericsDataPoolIdentifier(group, typeof(T));
 

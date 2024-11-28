@@ -11,7 +11,14 @@ namespace DPool.GenericsPool
         private readonly ILogger _logger;
         private readonly IServiceProvider _provider;
 
-        public GenericsDataPoolFactory(ILogger<GenericsDataPoolFactory> logger, IServiceProvider provider)
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <param name="provider"></param>
+        public GenericsDataPoolFactory(
+            ILogger<GenericsDataPoolFactory> logger, 
+            IServiceProvider provider)
         {
             _logger = logger;
             _provider = provider;

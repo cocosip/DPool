@@ -10,6 +10,11 @@ namespace DPool.Impl
         private readonly object _syncObject = new object();
         private readonly DataPoolOptions _options;
         private IRedisClient _client = null;
+        
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="options"></param>
         public RedisClientProxy(IOptions<DataPoolOptions> options)
         {
             _options = options.Value;

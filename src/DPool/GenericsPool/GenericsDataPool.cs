@@ -35,6 +35,14 @@ namespace DPool.GenericsPool
         private readonly Func<T, string> _idSelector;
         private readonly ConcurrentDictionary<string, DataFuture<T>> _processDict;
 
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <param name="options"></param>
+        /// <param name="genericsOptions"></param>
+        /// <param name="dPoolKeyGenerator"></param>
+        /// <param name="redisClientProxy"></param>
         public GenericsDataPool(
             ILogger<GenericsDataPool<T>> logger,
             IOptions<DataPoolOptions> options,
@@ -57,9 +65,11 @@ namespace DPool.GenericsPool
         }
 
 
-        /// <summary>添加数据
+        /// <summary>
+        /// 添加数据
         /// </summary>
         /// <param name="value"></param>
+        /// <returns></returns>
         public long Write(T[] value)
         {
             var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOptions.Group, _genericsOptions.DataType);
@@ -68,9 +78,11 @@ namespace DPool.GenericsPool
             //return client.RPush<T>(key, value);
         }
 
-        /// <summary>获取指定数量的数据
+        /// <summary>
+        /// 获取指定数量的数据
         /// </summary>
         /// <param name="count"></param>
+        /// <returns></returns>
         public T[] Get(int count)
         {
             var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOptions.Group, _genericsOptions.DataType);

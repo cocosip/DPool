@@ -29,6 +29,11 @@ namespace DPool.GenericsPool
             DataType = dataType;
         }
 
+        /// <summary>
+        /// Equals
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
         public bool Equals(GenericsDataPoolIdentifier other)
         {
             if (other is null)
@@ -39,8 +44,11 @@ namespace DPool.GenericsPool
             return Group.Equals(other.Group, StringComparison.OrdinalIgnoreCase) && DataType == other.DataType;
         }
 
-        /// <summary>重写相等方法
+        /// <summary>
+        /// 重写相等方法
         /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public override bool Equals(object obj)
         {
             if (obj is null)
@@ -59,6 +67,10 @@ namespace DPool.GenericsPool
             return StringComparer.OrdinalIgnoreCase.GetHashCode(Group) & DataType.FullName.GetHashCode();
         }
 
+        /// <summary>
+        /// ToString
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return $"[Group:{Group}-Type:{DataType.FullName}]";
