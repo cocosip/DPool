@@ -20,6 +20,7 @@ namespace DPool
                 .AddSingleton<IDataPool, DataPool>()
                 .AddSingleton<IGenericsDataPoolFactory, GenericsDataPoolFactory>()
                 .AddSingleton<IDPoolKeyGenerator, DPoolKeyGenerator>()
+                .AddTransient<IRedisClientProxy, RedisClientProxy>()
                 .AddScoped(typeof(IGenericsDataPool<>), typeof(GenericsDataPool<>))
                 .AddScoped(typeof(GenericsDataPoolOptions<>))
                 ;
