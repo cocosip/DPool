@@ -1,4 +1,4 @@
-﻿using CSRedis;
+﻿using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -34,10 +34,9 @@ namespace DPool.Demo
                     .AddDPool(c =>
                     {
                         c.AddDescriptor<TestUser>(x => x.Id);
-                        c.GetRedisClient = () => new CSRedis.CSRedisClient("mymaster,password=123456,prefix=my_", new string[] {
+                        c.RedisClientFunc = () => new RedisClient(ConnectionStringBuilder.Parse("mymaster,password=123456,prefix=my_"), new string[] {
                             "192.168.0.38:26379","192.168.0.38:26379","192.168.0.87:26379"
-                        });
-
+                        }, true);
                     });
 
                 var provider = services.BuildServiceProvider();

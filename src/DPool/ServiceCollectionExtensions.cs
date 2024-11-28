@@ -11,18 +11,18 @@ namespace DPool
     {
         /// <summary>添加数据池
         /// </summary>
-        public static IServiceCollection AddDPool(this IServiceCollection services, Action<DataPoolOption> configure = null)
+        public static IServiceCollection AddDPool(this IServiceCollection services, Action<DataPoolOptions> configure = null)
         {
-            configure ??= new Action<DataPoolOption>(c => { });
+            configure ??= new Action<DataPoolOptions>(c => { });
 
             services
-                .Configure<DataPoolOption>(configure)
+                .Configure<DataPoolOptions>(configure)
                 .AddSingleton<IDataPool, DataPool>()
                 .AddSingleton<IGenericsDataPoolFactory, GenericsDataPoolFactory>()
                 .AddSingleton<IDPoolKeyGenerator, DPoolKeyGenerator>()
                 .AddSingleton<IRedisClientProxy, RedisClientProxy>()
                 .AddScoped(typeof(IGenericsDataPool<>), typeof(GenericsDataPool<>))
-                .AddScoped(typeof(GenericsDataPoolOption<>))
+                .AddScoped(typeof(GenericsDataPoolOptions<>))
                 ;
 
             return services;

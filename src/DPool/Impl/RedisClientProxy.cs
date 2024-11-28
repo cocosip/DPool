@@ -1,4 +1,4 @@
-﻿using CSRedis;
+﻿using FreeRedis;
 using Microsoft.Extensions.Options;
 
 namespace DPool.Impl
@@ -8,22 +8,22 @@ namespace DPool.Impl
     public class RedisClientProxy : IRedisClientProxy
     {
         private readonly object _syncObject = new object();
-        private readonly DataPoolOption _option;
-        private CSRedisClient _client = null;
-        public RedisClientProxy(IOptions<DataPoolOption> option)
+        private readonly DataPoolOptions _options;
+        private IRedisClient _client = null;
+        public RedisClientProxy(IOptions<DataPoolOptions> options)
         {
-            _option = option.Value;
+            _options = options.Value;
         }
 
         /// <summary>获取客户端
         /// </summary>
-        public CSRedisClient GetClient()
+        public IRedisClient GetClient()
         {
             lock (_syncObject)
             {
                 if (_client == null)
                 {
-                    _client = _option.GetRedisClient();
+                    _client = _options.RedisClientFunc();
                 }
             }
             return _client;

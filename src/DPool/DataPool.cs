@@ -16,14 +16,14 @@ namespace DPool
         private int _isRunning = 0;
 
         private readonly ILogger _logger;
-        private readonly DataPoolOption _option;
+        private readonly DataPoolOptions _option;
         private readonly IGenericsDataPoolFactory _genericsDataPoolFactory;
 
         private readonly ConcurrentDictionary<GenericsDataPoolIdentifier, IGenericsDataPool> _genericsDataPoolDict;
 
         /// <summary>Ctor
         /// </summary>
-        public DataPool(ILogger<DataPool> logger, IOptions<DataPoolOption> option, IGenericsDataPoolFactory genericsDataPoolFactory)
+        public DataPool(ILogger<DataPool> logger, IOptions<DataPoolOptions> option, IGenericsDataPoolFactory genericsDataPoolFactory)
         {
             _logger = logger;
             _option = option.Value;

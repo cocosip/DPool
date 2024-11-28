@@ -1,4 +1,5 @@
 ﻿using DPool.Utility;
+using FreeRedis;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -23,8 +24,8 @@ namespace DPool.GenericsPool
         public GenericsDataPoolIdentifier Identifier { get; }
 
         private readonly ILogger _logger;
-        private readonly DataPoolOption _option;
-        private readonly GenericsDataPoolOption<T> _genericsOption;
+        private readonly DataPoolOptions _options;
+        private readonly GenericsDataPoolOptions<T> _genericsOptions;
         private readonly IDPoolKeyGenerator _dPoolKeyGenerator;
         private readonly IRedisClientProxy _redisClientProxy;
 
@@ -34,19 +35,24 @@ namespace DPool.GenericsPool
         private readonly Func<T, string> _idSelector;
         private readonly ConcurrentDictionary<string, DataFuture<T>> _processDict;
 
-        public GenericsDataPool(ILogger<GenericsDataPool<T>> logger, IOptions<DataPoolOption> option, GenericsDataPoolOption<T> genericsOption, IDPoolKeyGenerator dPoolKeyGenerator, IRedisClientProxy redisClientProxy)
+        public GenericsDataPool(
+            ILogger<GenericsDataPool<T>> logger,
+            IOptions<DataPoolOptions> options,
+            GenericsDataPoolOptions<T> genericsOptions,
+            IDPoolKeyGenerator dPoolKeyGenerator,
+            IRedisClientProxy redisClientProxy)
         {
             _logger = logger;
-            _option = option.Value;
-            _genericsOption = genericsOption;
+            _options = options.Value;
+            _genericsOptions = genericsOptions;
             _dPoolKeyGenerator = dPoolKeyGenerator;
             _redisClientProxy = redisClientProxy;
 
-            Identifier = BuildIdentifier(_genericsOption);
+            Identifier = BuildIdentifier(_genericsOptions);
 
             _cts = new CancellationTokenSource();
 
-            _idSelector = (Func<T, string>)_genericsOption.IdSelector;
+            _idSelector = (Func<T, string>)_genericsOptions.IdSelector;
             _processDict = new ConcurrentDictionary<string, DataFuture<T>>();
         }
 
@@ -56,9 +62,10 @@ namespace DPool.GenericsPool
         /// <param name="value"></param>
         public long Write(T[] value)
         {
-            var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOption.Group, _genericsOption.DataType);
-            var client = _redisClientProxy.GetClient();
-            return client.RPush<T>(key, value);
+            var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOptions.Group, _genericsOptions.DataType);
+            var cli = _redisClientProxy.GetClient();
+            return cli.RPush(key, value);
+            //return client.RPush<T>(key, value);
         }
 
         /// <summary>获取指定数量的数据
@@ -66,17 +73,17 @@ namespace DPool.GenericsPool
         /// <param name="count"></param>
         public T[] Get(int count)
         {
-            var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOption.Group, _genericsOption.DataType);
-            var lockName = _dPoolKeyGenerator.GenerateDataLockName(_genericsOption.Group, _genericsOption.DataType);
-            var client = _redisClientProxy.GetClient();
-            var dataLock = client.Lock(lockName, 5);
+            var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOptions.Group, _genericsOptions.DataType);
+            var lockName = _dPoolKeyGenerator.GenerateDataLockName(_genericsOptions.Group, _genericsOptions.DataType);
+            var cli = _redisClientProxy.GetClient();
+            var dataLock = cli.Lock(lockName, 5);
 
-            var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType);
+            var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOptions.Group, _genericsOptions.ProcessGroup, _genericsOptions.DataType);
             var dataFeatures = new List<DataFuture<T>>();
 
             try
             {
-                var value = client.LRange<T>(key, 0, count - 1).Where(x => x != null).ToArray();
+                var value = cli.LRange<T>(key, 0, count - 1).Where(x => x != null).ToArray();
                 if (value.Length <= 0)
                 {
                     return null;
@@ -90,20 +97,45 @@ namespace DPool.GenericsPool
 
                 var time = DateTimeUtil.ToInt32(DateTime.Now);
 
-                client.StartPipe(p =>
-                {
-                    //索引
-                    p.RPush(processIndexKey, ids);
+                //cli.StartPipe(p =>
+                //{
+                //    //索引
+                //    p.RPush(processIndexKey, ids);
 
+                //    foreach (var item in value)
+                //    {
+                //        //当前id
+                //        var id = _idSelector(item);
+
+                //        //当前数据Key
+                //        var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
+
+                //        p.HMSet(processDataKey, DPoolConsts.PROCESS_DATA_DATETIME_FIELD, time, DPoolConsts.PROCESS_DATA_DATA_FIELD, item);
+
+                //        //添加到列表
+                //        dataFeatures.Add(new DataFuture<T>(id, item));
+                //    }
+
+                //    if (value.Length > 0)
+                //    {
+                //        //移除
+                //        p.LTrim(key, value.Length, -1);
+                //    }
+                //});
+
+
+                using (var pipe = cli.StartPipe())
+                {
+                    pipe.RPush(processIndexKey, ids);
                     foreach (var item in value)
                     {
                         //当前id
                         var id = _idSelector(item);
 
                         //当前数据Key
-                        var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
+                        var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOptions.Group, _genericsOptions.ProcessGroup, _genericsOptions.DataType, id);
 
-                        p.HMSet(processDataKey, DPoolConsts.PROCESS_DATA_DATETIME_FIELD, time, DPoolConsts.PROCESS_DATA_DATA_FIELD, item);
+                        pipe.HMSet(processDataKey, DPoolConsts.PROCESS_DATA_DATETIME_FIELD, time, DPoolConsts.PROCESS_DATA_DATA_FIELD, item);
 
                         //添加到列表
                         dataFeatures.Add(new DataFuture<T>(id, item));
@@ -112,9 +144,12 @@ namespace DPool.GenericsPool
                     if (value.Length > 0)
                     {
                         //移除
-                        p.LTrim(key, value.Length, -1);
+                        pipe.LTrim(key, value.Length, -1);
                     }
-                });
+
+                    //TODO end pipe?
+                    //pipe.EndPipe();
+                }
 
                 //添加到处理中的
                 foreach (var dataFeature in dataFeatures)
@@ -146,32 +181,54 @@ namespace DPool.GenericsPool
         /// <param name="value"></param>
         public void Return(params T[] value)
         {
-            var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOption.Group, _genericsOption.DataType);
-            var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType);
-            var client = _redisClientProxy.GetClient();
+            var key = _dPoolKeyGenerator.GenerateDataKey(_genericsOptions.Group, _genericsOptions.DataType);
+            var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOptions.Group, _genericsOptions.ProcessGroup, _genericsOptions.DataType);
+            var cli = _redisClientProxy.GetClient();
 
             try
             {
                 var ids = value.Select(x => _idSelector(x)).ToArray();
-                client.StartPipe(p =>
+
+                //cli.StartPipe(p =>
+                //{
+                //    //添加到数据中
+                //    p.RPush<T>(key, value);
+
+                //    foreach (var item in value)
+                //    {
+                //        var id = _idSelector(item);
+
+                //        //当前数据Key
+                //        var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
+
+                //        p.Del(processDataKey);
+                //        ////删除数据
+                //        //p.HDel(processDataKey);
+                //        //删除索引
+                //        p.LRem(processIndexKey, 1, id);
+                //    }
+                //});
+
+                using (var pipe = cli.StartPipe())
                 {
+
                     //添加到数据中
-                    p.RPush<T>(key, value);
+                    pipe.RPush(key, value);
 
                     foreach (var item in value)
                     {
                         var id = _idSelector(item);
 
                         //当前数据Key
-                        var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
+                        var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOptions.Group, _genericsOptions.ProcessGroup, _genericsOptions.DataType, id);
 
-                        p.Del(processDataKey);
+                        pipe.Del(processDataKey);
                         ////删除数据
                         //p.HDel(processDataKey);
                         //删除索引
-                        p.LRem(processIndexKey, 1, id);
+                        pipe.LRem(processIndexKey, 1, id);
                     }
-                });
+                }
 
                 //从本地字典中删除
                 RemoveLocalProcess(ids);
@@ -187,28 +244,44 @@ namespace DPool.GenericsPool
         /// <param name="value"></param>
         public void Release(params T[] value)
         {
-            var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType);
-            var client = _redisClientProxy.GetClient();
+            var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOptions.Group, _genericsOptions.ProcessGroup, _genericsOptions.DataType);
+            var cli = _redisClientProxy.GetClient();
 
             try
             {
                 var ids = value.Select(x => _idSelector(x)).ToArray();
-                client.StartPipe(p =>
+
+                //cli.StartPipe(p =>
+                //{
+                //    foreach (var item in value)
+                //    {
+                //        var id = _idSelector(item);
+                //        //当前数据Key
+                //        var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
+
+                //        p.Del(processDataKey);
+                //        ////删除数据
+                //        //p.HDel(processDataKey);
+                //        //删除索引
+                //        p.LRem(processIndexKey, 1, id);
+                //    }
+                //});
+
+                using (var pipe = cli.StartPipe())
                 {
                     foreach (var item in value)
                     {
                         var id = _idSelector(item);
                         //当前数据Key
-                        var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
+                        var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOptions.Group, _genericsOptions.ProcessGroup, _genericsOptions.DataType, id);
 
-                        p.Del(processDataKey);
+                        pipe.Del(processDataKey);
                         ////删除数据
                         //p.HDel(processDataKey);
                         //删除索引
-                        p.LRem(processIndexKey, 1, id);
+                        pipe.LRem(processIndexKey, 1, id);
                     }
-                });
-
+                }
 
                 //从本地字典中删除
                 RemoveLocalProcess(ids);
@@ -272,7 +345,7 @@ namespace DPool.GenericsPool
                         var timeoutList = new List<DataFuture<T>>();
                         foreach (var entry in _processDict)
                         {
-                            if (entry.Value.IsTimeout(_option.DataTimeoutSeconds))
+                            if (entry.Value.IsTimeout(_options.DataTimeoutSeconds))
                             {
                                 timeoutList.Add(entry.Value);
                             }
@@ -293,7 +366,7 @@ namespace DPool.GenericsPool
                         _logger.LogError(ex, "扫描过期数据出现异常,异常信息:{0} .", ex.Message);
                     }
 
-                    await Task.Delay(_option.ScanTimeoutDataInterval);
+                    await Task.Delay(_options.ScanTimeoutDataInterval);
                 }
             });
         }
@@ -314,55 +387,94 @@ namespace DPool.GenericsPool
 
                 try
                 {
-                    var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType);
-                    var client = _redisClientProxy.GetClient();
+                    var processIndexKey = _dPoolKeyGenerator.GenerateProcessDataIndexKey(_genericsOptions.Group, _genericsOptions.ProcessGroup, _genericsOptions.DataType);
+                    var cli = _redisClientProxy.GetClient();
 
                     //获取索引全部数据
-                    var ids = client.LRange(processIndexKey, 0, -1);
+                    var ids = cli.LRange(processIndexKey, 0, -1);
                     if (ids.Length > 0)
                     {
-                        var result = client.StartPipe(p =>
+                        //var result = client.StartPipe(p =>
+                        //{
+                        //    foreach (var id in ids)
+                        //    {
+                        //        //当前数据Key
+                        //        var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
+
+                        //        p.HGet<int>(processDataKey, DPoolConsts.PROCESS_DATA_DATETIME_FIELD);
+                        //        p.HGet<T>(processDataKey, DPoolConsts.PROCESS_DATA_DATA_FIELD);
+                        //    }
+                        //});
+
+                        //int datetime = DateTimeUtil.ToInt32(DateTime.Now.AddDays(-1));
+                        //T data = null;
+                        //for (int i = 0; i < result.Length; i++)
+                        //{
+                        //    if (i % 2 == 0)
+                        //    {
+                        //        datetime = Convert.ToInt32(result[i]);
+                        //    }
+                        //    else
+                        //    {
+                        //        data = result[i] as T;
+                        //        if (data != null)
+                        //        {
+                        //            var id = _idSelector(data);
+                        //            var createdOn = DateTimeUtil.ToDateTime(datetime);
+                        //            var dataFuture = new DataFuture<T>(id, data, createdOn);
+                        //            //加入到本地队列中
+                        //            if (!_processDict.TryAdd(id, dataFuture))
+                        //            {
+                        //                _logger.LogDebug("将处理中数据加入本地队列失败,数据池信息:{0},Id:'{1}',创建时间:'{2}'.", Identifier, id, createdOn.ToString("yyyy-MM-dd HH:mm:ss"));
+                        //            }
+                        //        }
+                        //        else
+                        //        {
+                        //            _logger.LogDebug("从Redis读取处理中数据数据为空,数据池信息:{0}", Identifier);
+                        //        }
+                        //    }
+                        //}
+
+                        using (var pipe = cli.StartPipe())
                         {
                             foreach (var id in ids)
                             {
                                 //当前数据Key
-                                var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOption.Group, _genericsOption.ProcessGroup, _genericsOption.DataType, id);
-
-                                p.HGet<int>(processDataKey, DPoolConsts.PROCESS_DATA_DATETIME_FIELD);
-                                p.HGet<T>(processDataKey, DPoolConsts.PROCESS_DATA_DATA_FIELD);
+                                var processDataKey = _dPoolKeyGenerator.GenerateProcessDataKey(_genericsOptions.Group, _genericsOptions.ProcessGroup, _genericsOptions.DataType, id);
+                                pipe.HGet<int>(processDataKey, DPoolConsts.PROCESS_DATA_DATETIME_FIELD);
+                                pipe.HGet<T>(processDataKey, DPoolConsts.PROCESS_DATA_DATA_FIELD);
                             }
-                        });
 
-                        int datetime = DateTimeUtil.ToInt32(DateTime.Now.AddDays(-1));
-                        T data = null;
-                        for (int i = 0; i < result.Length; i++)
-                        {
-                            if (i % 2 == 0)
+                            var result = pipe.EndPipe();
+                            int datetime = DateTimeUtil.ToInt32(DateTime.Now.AddDays(-1));
+                            T data = null;
+                            for (int i = 0; i < result.Length; i++)
                             {
-                                datetime = Convert.ToInt32(result[i]);
-                            }
-                            else
-                            {
-                                data = result[i] as T;
-                                if (data != null)
+                                if (i % 2 == 0)
                                 {
-                                    var id = _idSelector(data);
-                                    var createdOn = DateTimeUtil.ToDateTime(datetime);
-                                    var dataFuture = new DataFuture<T>(id, data, createdOn);
-                                    //加入到本地队列中
-                                    if (!_processDict.TryAdd(id, dataFuture))
-                                    {
-                                        _logger.LogDebug("将处理中数据加入本地队列失败,数据池信息:{0},Id:'{1}',创建时间:'{2}'.", Identifier, id, createdOn.ToString("yyyy-MM-dd HH:mm:ss"));
-                                    }
+                                    datetime = Convert.ToInt32(result[i]);
                                 }
                                 else
                                 {
-                                    _logger.LogDebug("从Redis读取处理中数据数据为空,数据池信息:{0}", Identifier);
+                                    data = result[i] as T;
+                                    if (data != null)
+                                    {
+                                        var id = _idSelector(data);
+                                        var createdOn = DateTimeUtil.ToDateTime(datetime);
+                                        var dataFuture = new DataFuture<T>(id, data, createdOn);
+                                        //加入到本地队列中
+                                        if (!_processDict.TryAdd(id, dataFuture))
+                                        {
+                                            _logger.LogDebug("将处理中数据加入本地队列失败,数据池信息:{0},Id:'{1}',创建时间:'{2}'.", Identifier, id, createdOn.ToString("yyyy-MM-dd HH:mm:ss"));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        _logger.LogDebug("从Redis读取处理中数据数据为空,数据池信息:{0}", Identifier);
+                                    }
                                 }
                             }
-
                         }
-
                     }
 
                 }
@@ -383,7 +495,7 @@ namespace DPool.GenericsPool
 
         /// <summary>生成标志
         /// </summary>
-        private GenericsDataPoolIdentifier BuildIdentifier(GenericsDataPoolOption option)
+        private GenericsDataPoolIdentifier BuildIdentifier(GenericsDataPoolOptions option)
         {
             var identifier = new GenericsDataPoolIdentifier()
             {

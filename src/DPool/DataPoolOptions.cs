@@ -1,5 +1,5 @@
-﻿using CSRedis;
-using DPool.GenericsPool;
+﻿using DPool.GenericsPool;
+using FreeRedis;
 using System;
 using System.Collections.Generic;
 
@@ -7,7 +7,7 @@ namespace DPool
 {
     /// <summary>配置信息
     /// </summary>
-    public class DataPoolOption
+    public class DataPoolOptions
     {
         /// <summary>如果没有分组名的时候,默认用该分组名
         /// </summary>
@@ -31,22 +31,23 @@ namespace DPool
 
         /// <summary>泛型数据池的描述信息
         /// </summary>
-        public List<GenericsDataPoolDescriptor> Descriptors { get; set; } = new List<GenericsDataPoolDescriptor>();
+        public List<GenericsDataPoolDescriptor> Descriptors { get; set; } = [];
 
-        /// <summary>获取客户端的委托
+        /// <summary>
+        /// RedisClient的配置
         /// </summary>
-        public Func<CSRedisClient> GetRedisClient { get; set; }
+        public Func<IRedisClient> RedisClientFunc { get; set; }
+
 
         /// <summary>Ctor
         /// </summary>
-        public DataPoolOption()
+        public DataPoolOptions()
         {
-
         }
 
         /// <summary>添加泛型数据池
         /// </summary>
-        public DataPoolOption AddDescriptor<T>(GenericsDataPoolDescriptor<T> descriptor) where T : class, new()
+        public DataPoolOptions AddDescriptor<T>(GenericsDataPoolDescriptor<T> descriptor) where T : class, new()
         {
             Descriptors.Add(descriptor);
             return this;
@@ -54,14 +55,14 @@ namespace DPool
 
         /// <summary>添加泛型数据池
         /// </summary>
-        public DataPoolOption AddDescriptor<T>(Func<T, string> idSelector, string group = "", string processGroup = "") where T : class, new()
+        public DataPoolOptions AddDescriptor<T>(Func<T, string> idSelector, string group = "", string processGroup = "") where T : class, new()
         {
             var descriptor = new GenericsDataPoolDescriptor<T>()
             {
                 Group = group,
                 DataType = typeof(T),
                 GenericsDataPoolType = typeof(IGenericsDataPool<T>),
-                GenericsDataPoolOptionType = typeof(GenericsDataPoolOption<T>),
+                GenericsDataPoolOptionType = typeof(GenericsDataPoolOptions<T>),
                 ProcessGroup = processGroup,
                 IdSelector = idSelector
             };

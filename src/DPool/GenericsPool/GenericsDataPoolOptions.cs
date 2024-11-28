@@ -4,7 +4,7 @@ namespace DPool.GenericsPool
 {
     /// <summary>泛型数据池配置信息
     /// </summary>
-    public class GenericsDataPoolOption
+    public class GenericsDataPoolOptions
     {
         /// <summary>组信息
         /// </summary>
@@ -34,7 +34,7 @@ namespace DPool.GenericsPool
 
     /// <summary>泛型数据池配置信息
     /// </summary>
-    public class GenericsDataPoolOption<T> : GenericsDataPoolOption
+    public class GenericsDataPoolOptions<T> : GenericsDataPoolOptions
     {
         /// <summary>数据类型
         /// </summary>
@@ -42,7 +42,7 @@ namespace DPool.GenericsPool
 
         /// <summary>泛型数据库配置信息类型
         /// </summary>
-        public override Type GenericsDataPoolOptionType { get; set; } = typeof(GenericsDataPoolOption<T>);
+        public override Type GenericsDataPoolOptionType { get; set; } = typeof(GenericsDataPoolOptions<T>);
 
     }
 }

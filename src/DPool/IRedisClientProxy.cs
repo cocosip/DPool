@@ -1,4 +1,4 @@
-﻿using CSRedis;
+﻿using FreeRedis;
 
 namespace DPool
 {
@@ -9,6 +9,6 @@ namespace DPool
     {
         /// <summary>获取客户端
         /// </summary>
-        CSRedisClient GetClient();
+        IRedisClient GetClient();
     }
 }
